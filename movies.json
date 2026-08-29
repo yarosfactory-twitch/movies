@@ -6,7 +6,7 @@
     "watched": "2026-08-14",
     "rating": 5,
     "note": "Переглянуто спільно в чаті — епічна другa частина, всі чекають третю.",
-    "poster": "https://image.tmdb.org/t/p/w220_and_h330_face//6ytPHimWtZDVObGcSmazMo4noRc.jpg"
+    "poster": "https://image.tmdb.org/t/p/w500/6ytPHimWtZDVObGcSmazMo4noRc.jpg"
   },
   {
     "title": "Тихе місце",
@@ -30,9 +30,25 @@
     "title": "Гра в кальмара: Сезон 2",
     "year": 2024,
     "genre": "Трилер",
-    "watched": "2026-07-22",
+    "watched": "2026-06-22",
     "rating": 3,
     "note": "Приклад запису — онови на свій.",
     "poster": "https://placehold.co/400x600/1b1610/e0bb7d?text=%D0%9A%D0%B0%D0%BB%D1%8C%D0%BC%D0%B0%D1%80"
+  },
+  {
+    "title": "Приклад: сьогоднішній фільм",
+    "year": 2026,
+    "genre": "Приклад",
+    "watched": "2026-08-29",
+    "note": "Онови на реальну назву — дата має збігатись із сьогоднішньою, щоб фільм показався по центру.",
+    "poster": ""
+  },
+  {
+    "title": "Приклад: запланований фільм",
+    "year": 2026,
+    "genre": "Приклад",
+    "watched": "2026-09-05",
+    "note": "Заплановано наперед — дата в майбутньому, тому оцінки поки немає.",
+    "poster": ""
   }
 ]
