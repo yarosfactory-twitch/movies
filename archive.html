@@ -79,15 +79,16 @@
   .poster .corner-br{ bottom:6px; left:6px; border-bottom:1px solid var(--gold-bright); border-left:1px solid var(--gold-bright); }
 
   .badge-genre{
-    position:absolute; top:8px; right:8px; z-index:2; background:rgba(18,14,10,0.82); border:1px solid var(--border);
-    color:var(--teal); font-size:10px; text-transform:uppercase; letter-spacing:0.06em; padding:4px 7px;
+    position:absolute; top:8px; right:8px; left:44px; z-index:2; background:rgba(18,14,10,0.88); border:1px solid var(--border);
+    color:var(--teal); font-size:9.5px; text-transform:uppercase; letter-spacing:0.05em; padding:4px 7px;
+    text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
 
   .poster-overlay{
-    position:absolute; left:0; right:0; bottom:0; padding:26px 10px 10px;
-    background:linear-gradient(180deg, transparent, rgba(10,7,5,0.94) 70%); z-index:1;
+    position:absolute; left:0; right:0; bottom:0; padding:30px 10px 10px;
+    background:linear-gradient(180deg, transparent, rgba(6,4,2,0.75) 45%, rgba(6,4,2,0.98) 100%); z-index:1;
   }
-  .poster-overlay .date{ font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mute); }
+  .poster-overlay .date{ font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-dim); font-weight:600; text-shadow:0 1px 3px rgba(0,0,0,0.8); }
 
   .card h2{ font-family:'Yeseva One', serif; font-weight:400; font-size:14.5px; color:var(--text); margin:8px 0 0; line-height:1.3; }
   .card .meta{ font-size:11px; color:var(--text-mute); margin-top:3px; }
@@ -171,13 +172,14 @@ function render(){
       ? `<img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(m.title)}</div>'">`
       : `<div class="no-poster">${escapeHtml(m.title)}</div>`;
     const genreLabel = genresOf(m).join(' · ');
+    const hostRating = m.rating ? (Number.isInteger(m.rating) ? m.rating : m.rating.toFixed(1)) : '';
 
     return `
     <div class="card" style="animation-delay:${Math.min(i*35, 350)}ms" data-id="${escapeHtml(movieId(m))}">
       <div class="poster">
         ${posterInner}
         <div class="corner-tr"></div><div class="corner-br"></div>
-        ${m.rating ? `<div class="badge-rating"><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6h6.4l-5.2 4 2 6.4L10 13.8 4.2 17.4l2-6.4L1 7h6.4z"/></svg>${Number.isInteger(m.rating) ? m.rating : m.rating.toFixed(1)}</div>` : ''}
+        <div class="badge-rating" ${hostRating ? '' : 'style="display:none"'}><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6h6.4l-5.2 4 2 6.4L10 13.8 4.2 17.4l2-6.4L1 7h6.4z"/></svg><span class="val">${hostRating}</span></div>
         ${genreLabel ? `<div class="badge-genre">${escapeHtml(genreLabel)}</div>` : ''}
         <div class="poster-overlay">
           <div class="date">переглянуто ${fmtDateLong(m.watched)}</div>
@@ -193,6 +195,31 @@ function render(){
     card.addEventListener('click', () => {
       window.location.href = 'movie.html?id=' + encodeURIComponent(card.dataset.id);
     });
+  });
+
+  attachViewerRatings();
+}
+
+let ratingUnsubs = [];
+function attachViewerRatings(){
+  ratingUnsubs.forEach(unsub => unsub());
+  ratingUnsubs = [];
+  if(!firebaseReady) return;
+
+  grid.querySelectorAll('.card[data-id]').forEach(card => {
+    const id = card.dataset.id;
+    const badge = card.querySelector('.badge-rating');
+    const valEl = badge.querySelector('.val');
+    const unsub = db.collection('reactions').doc(id).onSnapshot(snap => {
+      const data = snap.exists ? snap.data() : {};
+      const count = data.ratingCount || 0;
+      if(count > 0){
+        const avg = (data.ratingSum / count).toFixed(1);
+        valEl.textContent = avg;
+        badge.style.display = '';
+      }
+    }, err => console.warn('Помилка Firestore (rating badge):', err.message));
+    ratingUnsubs.push(unsub);
   });
 }
 
