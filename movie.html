@@ -48,7 +48,8 @@
   .rating-label{ font-size:11px; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
   .movie-body .bar{ margin-bottom:16px; }
   .ordered-by{ font-size:13px; color:var(--text-dim); margin-bottom:14px; }
-  .ordered-by span{ color:var(--gold-bright); font-weight:600; }
+  .ordered-by a{ color:var(--gold-bright); font-weight:600; text-decoration:none; border-bottom:1px solid transparent; transition:border-color .15s; }
+  .ordered-by a:hover{ border-color:var(--gold-bright); }
   .movie-note{ font-size:14.5px; color:var(--text-dim); line-height:1.65; max-width:520px; }
 
   .section-block{ max-width:880px; margin:30px auto 0; }
@@ -120,7 +121,7 @@ function renderMovie(m){
         ${tagHtml}
         <h2>${escapeHtml(m.title)}</h2>
         <div class="movie-meta">${m.year || ''}${m.year ? ' · ' : ''}<span class="genre">${escapeHtml(genresOf(m).join(' · '))}</span></div>
-        ${m.orderedBy ? `<div class="ordered-by">Замовив(ла): <span>${escapeHtml(m.orderedBy)}</span></div>` : ''}
+        ${m.orderedBy ? `<div class="ordered-by">Замовив(ла): <a href="https://www.twitch.tv/${encodeURIComponent(m.orderedBy)}" target="_blank" rel="noopener">${escapeHtml(m.orderedBy)}</a></div>` : ''}
         ${m.note ? `<p class="movie-note">${escapeHtml(m.note)}</p>` : ''}
       </div>
     </div>
