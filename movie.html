@@ -117,7 +117,7 @@ function renderMovie(m){
       <div class="movie-body">
         ${tagHtml}
         <h2>${escapeHtml(m.title)}</h2>
-        <div class="movie-meta">${m.year || ''}${m.year ? ' · ' : ''}<span class="genre">${escapeHtml(m.genre || '')}</span></div>
+        <div class="movie-meta">${m.year || ''}${m.year ? ' · ' : ''}<span class="genre">${escapeHtml(genresOf(m).join(' · '))}</span></div>
         ${ratingHtml}
         ${m.note ? `<p class="movie-note">${escapeHtml(m.note)}</p>` : ''}
       </div>
