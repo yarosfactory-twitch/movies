@@ -1,0 +1,129 @@
+/* ===== Спільні стилі для всіх сторінок сайту ===== */
+:root{
+  --bg:#120e0a;
+  --bg-glow: radial-gradient(1200px 600px at 50% -10%, rgba(176,141,87,0.10), transparent 60%);
+  --panel:#1b1610;
+  --panel-2:#211a12;
+  --border:#3a2f20;
+  --border-soft: rgba(176,141,87,0.25);
+  --gold:#b08d57;
+  --gold-bright:#e0bb7d;
+  --teal:#537468;
+  --text:#e9e0cd;
+  --text-dim:#a89b83;
+  --text-mute:#75695a;
+}
+
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background: var(--bg-glow), var(--bg);
+  color:var(--text);
+  font-family:'Golos Text', sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+.wrap{ max-width:1100px; margin:0 auto; padding:52px 16px 90px; }
+
+header{ text-align:center; margin-bottom:36px; }
+.eyebrow{
+  font-size:12px; letter-spacing:0.35em; text-transform:uppercase; color:var(--text-mute);
+  margin-bottom:16px; display:flex; align-items:center; justify-content:center; gap:14px;
+}
+.eyebrow::before, .eyebrow::after{ content:""; height:1px; width:48px; background:linear-gradient(90deg, transparent, var(--border-soft)); }
+.eyebrow::after{ background:linear-gradient(90deg, var(--border-soft), transparent); }
+
+h1{
+  font-family:'Yeseva One', serif; font-weight:400; font-size:clamp(28px, 4.5vw, 44px);
+  letter-spacing:0.02em; margin:0 0 10px; color:var(--gold-bright);
+  text-shadow:0 0 40px rgba(224,187,125,0.18);
+}
+.sub{ color:var(--text-dim); font-size:14.5px; max-width:480px; margin:0 auto; line-height:1.6; }
+
+.pagenav{ margin-top:20px; display:flex; gap:18px; justify-content:center; flex-wrap:wrap; }
+.pagenav a{
+  color:var(--text-mute); font-size:12px; letter-spacing:0.08em; text-transform:uppercase;
+  text-decoration:none; border-bottom:1px solid var(--border); padding-bottom:2px;
+  transition:color .15s, border-color .15s; background:none; border-top:none; border-left:none; border-right:none;
+  cursor:pointer; font-family:inherit;
+}
+.pagenav a:hover{ color:var(--gold-bright); border-color:var(--gold); }
+
+.status-tag{
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+  padding:6px 12px; border:1px solid var(--border-soft); color:var(--gold-bright);
+  margin-bottom:14px;
+}
+.status-tag.watched{ color:var(--teal); border-color:rgba(83,116,104,0.4); }
+.status-tag.planned, .status-tag.today-empty{ color:var(--text-mute); border-color:var(--border); }
+.status-tag .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; }
+
+.bar{ display:flex; gap:3px; max-width:170px; }
+.bar span{ height:5px; flex:1; background:var(--panel-2); border:1px solid var(--border); }
+.bar span.filled{ background:var(--gold); border-color:var(--gold-bright); }
+
+.twitch-link{
+  display:inline-flex; align-items:center; gap:8px; margin-top:16px;
+  border:1px solid var(--gold); color:var(--gold-bright); text-decoration:none;
+  padding:10px 20px; font-size:13px; letter-spacing:0.05em; text-transform:uppercase;
+  transition:background .18s, color .18s;
+}
+.twitch-link:hover{ background:var(--gold); color:#1b1610; }
+
+.empty-state{
+  text-align:center; padding:60px 20px; color:var(--text-mute); font-size:14px;
+  border:1px dashed var(--border); margin-top:20px;
+}
+
+/* ---------- Reactions ---------- */
+.reactions{ display:flex; gap:8px; flex-wrap:wrap; }
+.reaction-btn{
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  background:var(--panel-2); border:1px solid var(--border);
+  padding:8px 12px; cursor:pointer; font-family:inherit;
+  transition:border-color .15s, transform .1s;
+}
+.reaction-btn:hover{ border-color:var(--gold); }
+.reaction-btn:active{ transform:scale(0.94); }
+.reaction-btn.reacted{ border-color:var(--gold-bright); background:rgba(224,187,125,0.08); }
+.reaction-btn .emoji{ font-size:18px; line-height:1; }
+.reaction-btn .count{ font-size:11px; color:var(--text-mute); }
+.reaction-btn.reacted .count{ color:var(--gold-bright); }
+
+/* ---------- Comments ---------- */
+.comments h3{
+  font-family:'Yeseva One', serif; font-weight:400; font-size:16px;
+  color:var(--gold-bright); margin:0 0 14px;
+}
+.comment-form{ display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+.comment-form input, .comment-form textarea{
+  background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+  padding:10px 12px; font-family:'Golos Text', sans-serif; font-size:13.5px; outline:none;
+  resize:vertical; transition:border-color .2s;
+}
+.comment-form input::placeholder, .comment-form textarea::placeholder{ color:var(--text-mute); }
+.comment-form input:focus, .comment-form textarea:focus{ border-color:var(--gold); }
+.comment-form button{
+  align-self:flex-end;
+  background:var(--gold); border:1px solid var(--gold); color:#1b1610;
+  padding:9px 20px; font-size:12.5px; letter-spacing:0.05em; text-transform:uppercase;
+  cursor:pointer; font-weight:600; transition:background .15s;
+}
+.comment-form button:hover{ background:var(--gold-bright); }
+.comment-form button:disabled{ opacity:0.5; cursor:default; }
+.comment-hint{ font-size:11px; color:var(--text-mute); }
+
+.comment-list{ display:flex; flex-direction:column; gap:12px; }
+.comment-item{ border:1px solid var(--border); background:var(--panel); padding:12px 14px; }
+.comment-item .c-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; gap:10px; }
+.comment-item .c-name{ font-size:12.5px; color:var(--gold-bright); font-weight:600; }
+.comment-item .c-date{ font-size:10.5px; color:var(--text-mute); white-space:nowrap; }
+.comment-item .c-text{ font-size:13.5px; color:var(--text-dim); line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+.comments-empty{ font-size:13px; color:var(--text-mute); text-align:center; padding:14px 0; }
+.comments-loading{ font-size:12px; color:var(--text-mute); text-align:center; padding:10px 0; }
+
+footer{ text-align:center; margin-top:60px; color:var(--text-mute); font-size:12px; letter-spacing:0.05em; }
