@@ -122,7 +122,9 @@
     </div>
     <select class="sort-select" id="sortSelect">
       <option value="date">Спочатку нові</option>
-      <option value="rating">За оцінкою</option>
+      <option value="rating-desc">За оцінкою (від найвищої)</option>
+      <option value="rating-asc">За оцінкою (від найнижчої)</option>
+      <option value="year-asc">За роком (від старих)</option>
     </select>
     <div class="chips" id="genreChips"></div>
   </div>
@@ -156,8 +158,12 @@ function render(){
     return matchesGenre && matchesQuery;
   });
 
-  if(sortMode === 'rating'){
+  if(sortMode === 'rating-desc'){
     filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  } else if(sortMode === 'rating-asc'){
+    filtered.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+  } else if(sortMode === 'year-asc'){
+    filtered.sort((a, b) => (a.year || 0) - (b.year || 0));
   } else {
     filtered.sort((a, b) => new Date(b.watched) - new Date(a.watched));
   }
