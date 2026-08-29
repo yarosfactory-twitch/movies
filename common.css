@@ -62,9 +62,17 @@ h1{
 .status-tag.planned, .status-tag.today-empty{ color:var(--text-mute); border-color:var(--border); }
 .status-tag .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; }
 
-.bar{ display:flex; gap:3px; max-width:170px; }
+.bar{ display:flex; gap:3px; max-width:200px; }
 .bar span{ height:5px; flex:1; background:var(--panel-2); border:1px solid var(--border); }
 .bar span.filled{ background:var(--gold); border-color:var(--gold-bright); }
+
+.badge-rating{
+  position:absolute; top:8px; left:8px; z-index:2;
+  background:rgba(18,14,10,0.82); border:1px solid var(--border-soft); color:var(--gold-bright);
+  font-size:11px; font-weight:600; letter-spacing:0.03em; padding:4px 8px;
+  display:flex; align-items:center; gap:4px;
+}
+.badge-rating svg{ width:10px; height:10px; fill:var(--gold-bright); }
 
 .twitch-link{
   display:inline-flex; align-items:center; gap:8px; margin-top:16px;
