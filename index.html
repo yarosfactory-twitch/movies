@@ -163,10 +163,14 @@ function nodeHtml(idx, offset){
       : `<span class="mono">${escapeHtml(m.title||'')}</span>`;
   }
   const flame = status === 'today' ? '<span class="flame">🔥</span>' : '';
+  const showRating = m.rating && Math.abs(offset) <= 1;
+  const ratingBadge = showRating
+    ? `<div class="badge-rating"><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6h6.4l-5.2 4 2 6.4L10 13.8 4.2 17.4l2-6.4L1 7h6.4z"/></svg>${m.rating}</div>`
+    : '';
   const title = m.__placeholder ? 'Сьогодні' : (m.title || '');
   return `
     <div class="node ${status}" style="grid-column:${offset+3}" data-index="${idx}" data-offset="${offset}">
-      <div class="poster-slot"><div class="poster-card">${inner}${flame}</div></div>
+      <div class="poster-slot"><div class="poster-card">${inner}${flame}${ratingBadge}</div></div>
       <div class="node-title">${escapeHtml(title)}</div>
       <div class="node-date">${fmtDateShort(m.watched)}</div>
     </div>
