@@ -1,154 +1,54 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Фільм — yarosfactory</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css">
-<style>
-  .wrap{ max-width:880px; }
-
-  .back-row{ margin-bottom:28px; }
-  .back-row button{
-    background:none; border:none; color:var(--text-mute); font-size:12px; letter-spacing:0.08em;
-    text-transform:uppercase; cursor:pointer; font-family:inherit; padding:0;
-    border-bottom:1px solid var(--border); padding-bottom:2px; transition:color .15s, border-color .15s;
+[
+  {
+    "title": "Дюна: Частина друга",
+    "year": 2024,
+    "genre": ["Фантастика", "Пригоди"],
+    "watched": "2026-08-14",
+    "rating": 9,
+    "note": "Переглянуто спільно в чаті — епічна другa частина, всі чекають третю.",
+    "poster": "https://image.tmdb.org/t/p/w500/6ytPHimWtZDVObGcSmazMo4noRc.jpg"
+  },
+  {
+    "title": "Тихе місце",
+    "year": 2018,
+    "genre": "Хорор",
+    "watched": "2026-07-30",
+    "rating": 8,
+    "note": "Ідеально під нічний стрім — глядачі в чаті майже не дихали.",
+    "poster": "https://placehold.co/400x600/1b1610/e0bb7d?text=%D0%A2%D0%B8%D1%85%D0%B5+%D0%BC%D1%96%D1%81%D1%86%D0%B5"
+  },
+  {
+    "title": "Зона інтересів",
+    "year": 2023,
+    "genre": ["Драма", "Комедія"],
+    "watched": "2026-07-10",
+    "rating": 9,
+    "note": "Важкий, але сильний фільм. Обговорення розтягнулось на весь стрім.",
+    "poster": ""
+  },
+  {
+    "title": "Гра в кальмара: Сезон 2",
+    "year": 2024,
+    "genre": "Трилер",
+    "watched": "2026-06-22",
+    "rating": 6,
+    "note": "Приклад запису — онови на свій.",
+    "poster": "https://placehold.co/400x600/1b1610/e0bb7d?text=%D0%9A%D0%B0%D0%BB%D1%8C%D0%BC%D0%B0%D1%80"
+  },
+  {
+    "title": "Приклад: сьогоднішній фільм",
+    "year": 2026,
+    "genre": "Приклад",
+    "watched": "2026-08-29",
+    "note": "Онови на реальну назву — дата має збігатись із сьогоднішньою, щоб фільм показався по центру.",
+    "poster": ""
+  },
+  {
+    "title": "Приклад: запланований фільм",
+    "year": 2026,
+    "genre": "Приклад",
+    "watched": "2026-09-05",
+    "note": "Заплановано наперед — дата в майбутньому, тому оцінки поки немає.",
+    "poster": ""
   }
-  .back-row button:hover{ color:var(--gold-bright); border-color:var(--gold); }
-
-  .movie-hero{
-    display:grid; grid-template-columns:240px 1fr; gap:36px; align-items:start;
-    background:var(--panel); border:1px solid var(--border); padding:30px; position:relative;
-  }
-  .movie-hero::before, .movie-hero::after{ content:""; position:absolute; width:18px; height:18px; opacity:0.8; }
-  .movie-hero::before{ top:8px; left:8px; border-top:1px solid var(--gold); border-left:1px solid var(--gold); }
-  .movie-hero::after{ bottom:8px; right:8px; border-bottom:1px solid var(--gold); border-right:1px solid var(--gold); }
-
-  .movie-poster{
-    position:relative; aspect-ratio:2/3; width:100%;
-    border:1px solid var(--border-soft); background:var(--panel-2) center/cover no-repeat;
-    overflow:hidden; box-shadow:0 0 50px rgba(176,141,87,0.10);
-  }
-  .movie-poster img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-  .movie-poster .no-poster{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    text-align:center; padding:16px; font-family:'Yeseva One', serif; font-size:18px; color:var(--text-mute);
-    background:radial-gradient(120% 120% at 20% 0%, rgba(176,141,87,0.10), transparent 60%), var(--panel-2);
-  }
-
-  .movie-body h2{
-    font-family:'Yeseva One', serif; font-weight:400; font-size:clamp(24px, 3.4vw, 34px);
-    color:var(--text); margin:0 0 10px; line-height:1.25;
-  }
-  .movie-meta{ font-size:13px; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px; }
-  .movie-meta .genre{ color:var(--teal); }
-  .movie-body .bar{ margin-bottom:16px; }
-  .movie-note{ font-size:14.5px; color:var(--text-dim); line-height:1.65; max-width:520px; }
-
-  .section-block{ max-width:880px; margin:30px auto 0; }
-  .section-block .reactions{ background:var(--panel); border:1px solid var(--border); padding:20px 24px; justify-content:flex-start; }
-  .section-block .comments{ background:var(--panel); border:1px solid var(--border); padding:24px 26px; margin-top:18px; }
-
-  @media (max-width:640px){
-    .movie-hero{ grid-template-columns:1fr; }
-    .movie-poster{ max-width:220px; margin:0 auto; }
-    .movie-body{ text-align:center; }
-    .movie-body .bar{ margin-left:auto; margin-right:auto; }
-  }
-</style>
-</head>
-<body>
-
-<div class="wrap">
-  <header>
-    <div class="eyebrow">yarosfactory · ярос</div>
-    <nav class="pagenav">
-      <a href="index.html">← Сьогодні дивимось</a>
-      <a href="archive.html">Весь архів →</a>
-    </nav>
-  </header>
-
-  <div class="back-row"><button onclick="history.length > 1 ? history.back() : (window.location.href='index.html')">← Повернутися назад</button></div>
-
-  <div id="movieSection"><div class="empty-state">Завантаження…</div></div>
-  <div id="reactionsBlock"></div>
-  <div id="commentsBlock"></div>
-
-  <footer>оновлюється вручну · movies.json</footer>
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="common.js"></script>
-<script>
-const movieSection = document.getElementById('movieSection');
-const reactionsBlock = document.getElementById('reactionsBlock');
-const commentsBlock = document.getElementById('commentsBlock');
-
-const params = new URLSearchParams(window.location.search);
-const wantedId = params.get('id');
-
-function renderMovie(m){
-  const status = statusOf(m);
-  document.title = (m.title || 'Фільм') + ' — yarosfactory';
-
-  const posterInner = m.poster
-    ? `<img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(m.title)}</div>'">`
-    : `<div class="no-poster">${escapeHtml(m.title)}</div>`;
-
-  let tagHtml, ratingHtml;
-  if(status === 'today'){
-    tagHtml = `<div class="status-tag today"><span class="dot"></span>Сьогодні</div>`;
-    ratingHtml = m.rating ? ratingBar(m.rating) : '';
-  } else if(status === 'watched'){
-    tagHtml = `<div class="status-tag watched"><span class="dot"></span>Переглянуто ${fmtDateLong(m.watched)}</div>`;
-    ratingHtml = ratingBar(m.rating || 0);
-  } else {
-    tagHtml = `<div class="status-tag planned"><span class="dot"></span>Заплановано на ${fmtDateLong(m.watched)}</div>`;
-    ratingHtml = '';
-  }
-
-  movieSection.innerHTML = `
-    <div class="movie-hero">
-      <div class="movie-poster">${posterInner}</div>
-      <div class="movie-body">
-        ${tagHtml}
-        <h2>${escapeHtml(m.title)}</h2>
-        <div class="movie-meta">${m.year || ''}${m.year ? ' · ' : ''}<span class="genre">${escapeHtml(genresOf(m).join(' · '))}</span></div>
-        ${ratingHtml}
-        ${m.note ? `<p class="movie-note">${escapeHtml(m.note)}</p>` : ''}
-      </div>
-    </div>
-  `;
-
-  reactionsBlock.innerHTML = `<div class="section-block"></div>`;
-  renderReactions(reactionsBlock.firstChild, m);
-
-  commentsBlock.innerHTML = `<div class="section-block"></div>`;
-  renderComments(commentsBlock.firstChild, m);
-}
-
-fetch('movies.json')
-  .then(res => {
-    if(!res.ok) throw new Error('Не вдалося завантажити movies.json');
-    return res.json();
-  })
-  .then(data => {
-    const list = Array.isArray(data) ? data : [];
-    const found = list.find(m => movieId(m) === wantedId);
-    if(!found){
-      movieSection.innerHTML = `<div class="empty-state">Фільм не знайдено. Можливо, посилання застаріле.<br><br><a class="twitch-link" href="index.html">На головну →</a></div>`;
-      return;
-    }
-    renderMovie(found);
-  })
-  .catch(err => {
-    movieSection.innerHTML = `<div class="empty-state">Не вдалося завантажити дані.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
-  });
-</script>
-
-</body>
-</html>
+]
