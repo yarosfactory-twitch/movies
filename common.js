@@ -55,7 +55,7 @@ function statusOf(m){
 }
 function ratingBar(rating){
   let out = '<div class="bar">';
-  for(let i=1;i<=5;i++){ out += `<span class="${i<=rating ? 'filled':''}"></span>`; }
+  for(let i=1;i<=10;i++){ out += `<span class="${i<=rating ? 'filled':''}"></span>`; }
   out += '</div>';
   return out;
 }
@@ -68,6 +68,10 @@ function slugify(str){
     .replace(/^-+|-+$/g, '') || 'movie';
 }
 function movieId(m){ return m.id || slugify(m.title); }
+function genresOf(m){
+  if(!m.genre) return [];
+  return Array.isArray(m.genre) ? m.genre.filter(Boolean) : [m.genre];
+}
 
 /* ---- Реакції: container — DOM-елемент, movie — об'єкт фільму з movies.json ---- */
 function renderReactions(container, movie){
