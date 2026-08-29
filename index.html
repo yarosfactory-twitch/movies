@@ -35,40 +35,24 @@
     overflow-x:hidden;
   }
 
-  .wrap{
-    max-width:1040px;
-    margin:0 auto;
-    padding:56px 20px 90px;
-  }
+  .wrap{ max-width:1100px; margin:0 auto; padding:52px 16px 90px; }
 
-  /* ---------- Header ---------- */
-  header{ text-align:center; margin-bottom:44px; }
+  header{ text-align:center; margin-bottom:36px; }
   .eyebrow{
-    font-size:12px;
-    letter-spacing:0.35em;
-    text-transform:uppercase;
-    color:var(--text-mute);
-    margin-bottom:16px;
-    display:flex; align-items:center; justify-content:center; gap:14px;
+    font-size:12px; letter-spacing:0.35em; text-transform:uppercase; color:var(--text-mute);
+    margin-bottom:16px; display:flex; align-items:center; justify-content:center; gap:14px;
   }
-  .eyebrow::before, .eyebrow::after{
-    content:""; height:1px; width:48px;
-    background:linear-gradient(90deg, transparent, var(--border-soft));
-  }
+  .eyebrow::before, .eyebrow::after{ content:""; height:1px; width:48px; background:linear-gradient(90deg, transparent, var(--border-soft)); }
   .eyebrow::after{ background:linear-gradient(90deg, var(--border-soft), transparent); }
 
   h1{
-    font-family:'Yeseva One', serif;
-    font-weight:400;
-    font-size:clamp(28px, 4.5vw, 44px);
-    letter-spacing:0.02em;
-    margin:0 0 10px;
-    color:var(--gold-bright);
+    font-family:'Yeseva One', serif; font-weight:400; font-size:clamp(28px, 4.5vw, 44px);
+    letter-spacing:0.02em; margin:0 0 10px; color:var(--gold-bright);
     text-shadow:0 0 40px rgba(224,187,125,0.18);
   }
   .sub{ color:var(--text-dim); font-size:14.5px; max-width:480px; margin:0 auto; line-height:1.6; }
 
-  .pagenav{ margin-top:22px; }
+  .pagenav{ margin-top:20px; }
   .pagenav a{
     color:var(--text-mute); font-size:12px; letter-spacing:0.08em; text-transform:uppercase;
     text-decoration:none; border-bottom:1px solid var(--border); padding-bottom:2px;
@@ -76,141 +60,126 @@
   }
   .pagenav a:hover{ color:var(--gold-bright); border-color:var(--gold); }
 
-  /* ---------- Hero focus panel ---------- */
-  .hero{
-    display:grid;
-    grid-template-columns:220px 1fr;
-    gap:32px;
-    align-items:center;
-    background:var(--panel);
-    border:1px solid var(--border);
-    padding:28px;
-    position:relative;
-    min-height:330px;
-  }
-  .hero::before, .hero::after{
-    content:""; position:absolute; width:18px; height:18px; opacity:0.8;
-  }
-  .hero::before{ top:8px; left:8px; border-top:1px solid var(--gold); border-left:1px solid var(--gold); }
-  .hero::after{ bottom:8px; right:8px; border-bottom:1px solid var(--gold); border-right:1px solid var(--gold); }
-
-  .hero-poster{
-    position:relative;
-    aspect-ratio:2/3;
-    width:100%;
-    border:1px solid var(--border-soft);
-    background:var(--panel-2) center/cover no-repeat;
-    overflow:hidden;
-    box-shadow:0 0 50px rgba(176,141,87,0.10);
-  }
-  .hero-poster img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-  .hero-poster .no-poster{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    text-align:center; padding:16px; font-family:'Yeseva One', serif; font-size:18px; color:var(--text-mute);
-    background:radial-gradient(120% 120% at 20% 0%, rgba(176,141,87,0.10), transparent 60%), var(--panel-2);
-  }
-
-  .hero-body{ min-width:0; }
-  .status-tag{
-    display:inline-flex; align-items:center; gap:6px;
-    font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
-    padding:6px 12px; border:1px solid var(--border-soft); color:var(--gold-bright);
-    margin-bottom:16px;
-  }
-  .status-tag.watched{ color:var(--teal); border-color:rgba(83,116,104,0.4); }
-  .status-tag.planned{ color:var(--text-mute); border-color:var(--border); }
-  .status-tag .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; }
-
-  .hero-body h2{
-    font-family:'Yeseva One', serif; font-weight:400;
-    font-size:clamp(22px, 3vw, 32px); color:var(--text); margin:0 0 10px; line-height:1.25;
-  }
-  .hero-meta{ font-size:13px; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px; }
-  .hero-meta .genre{ color:var(--teal); }
-
-  .bar{ display:flex; gap:3px; margin-bottom:16px; max-width:180px; }
-  .bar span{ height:5px; flex:1; background:var(--panel-2); border:1px solid var(--border); }
-  .bar span.filled{ background:var(--gold); border-color:var(--gold-bright); }
-
-  .hero-note{ font-size:14px; color:var(--text-dim); line-height:1.6; max-width:520px; }
-  .hero-empty{ color:var(--text-mute); font-size:15px; line-height:1.7; }
-
-  /* ---------- Timeline ---------- */
-  .timeline-wrap{ margin-top:36px; position:relative; }
-  .timeline-label{
-    display:flex; justify-content:space-between; font-size:10.5px; letter-spacing:0.12em;
-    text-transform:uppercase; color:var(--text-mute); margin-bottom:10px; padding:0 4px;
-  }
-  .timeline-label .today-lbl{ color:var(--gold-bright); }
-
-  .timeline-shell{ position:relative; display:flex; align-items:center; gap:8px; }
+  /* ---------- Carousel ---------- */
+  .carousel-wrap{ position:relative; }
+  .carousel-shell{ position:relative; display:flex; align-items:center; }
 
   .arrow{
-    flex:0 0 auto; width:36px; height:36px; border:1px solid var(--border);
-    background:var(--panel); color:var(--text-dim); cursor:pointer;
+    flex:0 0 auto; width:34px; height:34px; border:1px solid var(--border);
+    background:rgba(27,22,16,0.7); color:var(--text-dim); cursor:pointer;
     display:flex; align-items:center; justify-content:center; font-size:16px;
-    transition:border-color .15s, color .15s;
+    transition:border-color .15s, color .15s; position:relative; z-index:3;
   }
   .arrow:hover{ border-color:var(--gold); color:var(--gold-bright); }
 
-  .timeline-viewport{
+  .carousel{
     flex:1; overflow-x:auto; overflow-y:hidden;
     scroll-snap-type:x mandatory;
-    display:flex; align-items:center;
+    display:flex; align-items:flex-start;
     scrollbar-width:none;
-    position:relative;
-    padding:14px 0;
+    padding:24px 0 10px;
   }
-  .timeline-viewport::-webkit-scrollbar{ display:none; }
-  .timeline-viewport::before{
-    content:"";
-    position:absolute; left:0; right:0; top:50%;
-    height:1px; background:linear-gradient(90deg, transparent, var(--border-soft) 15%, var(--border-soft) 85%, transparent);
-    z-index:0;
-  }
+  .carousel::-webkit-scrollbar{ display:none; }
 
   .node{
     flex:0 0 auto;
     scroll-snap-align:center;
-    width:64px;
-    padding:0 10px;
-    display:flex; flex-direction:column; align-items:center; gap:6px;
+    padding:0 12px;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
     cursor:pointer;
-    position:relative; z-index:1;
-    transition:transform .15s ease, opacity .15s ease;
   }
-  .node-ring{
-    width:56px; height:56px; border-radius:50%;
-    border:2px solid var(--border);
-    background:var(--panel-2) center/cover no-repeat;
-    display:flex; align-items:center; justify-content:center;
-    overflow:hidden;
-    position:relative;
-    transition:border-color .2s, box-shadow .2s;
-  }
-  .node-ring img{ width:100%; height:100%; object-fit:cover; }
-  .node-ring .mono{ font-family:'Yeseva One', serif; font-size:15px; color:var(--text-mute); }
 
-  .node.watched .node-ring{ border-color:var(--gold); }
-  .node.planned .node-ring{ border-style:dashed; border-color:var(--text-mute); opacity:0.55; }
-  .node.today .node-ring{
-    border-color:var(--gold-bright);
-    box-shadow:0 0 0 4px rgba(224,187,125,0.14), 0 0 22px rgba(224,187,125,0.35);
+  .poster-card{
+    width:110px; aspect-ratio:2/3;
+    border:1px solid var(--border);
+    background:var(--panel-2) center/cover no-repeat;
+    position:relative; overflow:hidden;
+    transition:width .28s ease, opacity .28s ease, border-color .2s ease, box-shadow .2s ease;
   }
-  .node .flame{ position:absolute; bottom:-3px; right:-3px; font-size:13px; }
-  .node-date{ font-size:9px; color:var(--text-mute); white-space:nowrap; }
-  .node.current .node-date{ color:var(--gold-bright); }
+  .poster-card img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .poster-card .mono{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:10px; font-family:'Yeseva One', serif; font-size:13px; color:var(--text-mute);
+    background:radial-gradient(120% 120% at 20% 0%, rgba(176,141,87,0.10), transparent 60%), var(--panel-2);
+  }
+
+  .node.watched .poster-card{ border-color:var(--gold); }
+  .node.planned .poster-card{ border-style:dashed; border-color:var(--text-mute); }
+  .node.today .poster-card{
+    border-color:var(--gold-bright);
+    box-shadow:0 0 0 4px rgba(224,187,125,0.14), 0 0 24px rgba(224,187,125,0.35);
+  }
+  .node.today-empty .poster-card{
+    border-style:dashed; border-color:var(--text-mute);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .node.today-empty .poster-card .q{ font-family:'Yeseva One', serif; font-size:28px; color:var(--text-mute); }
+  .node .flame{ position:absolute; bottom:-2px; right:-2px; font-size:12px; z-index:2; }
+
+  .node-title{
+    font-size:11px; color:var(--text-dim); text-align:center; max-width:110px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .node-date{ font-size:9.5px; color:var(--text-mute); }
+
+  .node.tier-0 .poster-card{ width:170px; }
+  .node.tier-0 .node-title{ color:var(--text); font-weight:600; max-width:170px; }
+  .node.tier-1 .poster-card{ width:125px; opacity:0.88; }
+  .node.tier-2 .poster-card{ width:96px; opacity:0.6; }
+  .node.tier-3 .poster-card{ width:76px; opacity:0.32; }
+  .node.tier-2 .node-title, .node.tier-3 .node-title,
+  .node.tier-2 .node-date, .node.tier-3 .node-date{ display:none; }
+
+  /* ---------- Detail panel ---------- */
+  .detail{
+    max-width:560px; margin:30px auto 0; text-align:center;
+    background:var(--panel); border:1px solid var(--border); padding:26px 28px; position:relative;
+  }
+  .detail::before, .detail::after{ content:""; position:absolute; width:16px; height:16px; opacity:0.8; }
+  .detail::before{ top:8px; left:8px; border-top:1px solid var(--gold); border-left:1px solid var(--gold); }
+  .detail::after{ bottom:8px; right:8px; border-bottom:1px solid var(--gold); border-right:1px solid var(--gold); }
+
+  .status-tag{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+    padding:6px 12px; border:1px solid var(--border-soft); color:var(--gold-bright);
+    margin-bottom:14px;
+  }
+  .status-tag.watched{ color:var(--teal); border-color:rgba(83,116,104,0.4); }
+  .status-tag.planned, .status-tag.today-empty{ color:var(--text-mute); border-color:var(--border); }
+  .status-tag .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; }
+
+  .detail h2{
+    font-family:'Yeseva One', serif; font-weight:400;
+    font-size:clamp(20px, 3vw, 27px); color:var(--text); margin:0 0 10px; line-height:1.3;
+  }
+  .detail .meta{ font-size:12.5px; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:14px; }
+  .detail .meta .genre{ color:var(--teal); }
+
+  .bar{ display:flex; gap:3px; margin:0 auto 14px; max-width:170px; }
+  .bar span{ height:5px; flex:1; background:var(--panel-2); border:1px solid var(--border); }
+  .bar span.filled{ background:var(--gold); border-color:var(--gold-bright); }
+
+  .detail .note{ font-size:14px; color:var(--text-dim); line-height:1.6; }
+
+  .twitch-link{
+    display:inline-flex; align-items:center; gap:8px; margin-top:16px;
+    border:1px solid var(--gold); color:var(--gold-bright); text-decoration:none;
+    padding:10px 20px; font-size:13px; letter-spacing:0.05em; text-transform:uppercase;
+    transition:background .18s, color .18s;
+  }
+  .twitch-link:hover{ background:var(--gold); color:#1b1610; }
 
   .empty-state{
     text-align:center; padding:60px 20px; color:var(--text-mute); font-size:14px;
     border:1px dashed var(--border); margin-top:20px;
   }
 
-  footer{ text-align:center; margin-top:70px; color:var(--text-mute); font-size:12px; letter-spacing:0.05em; }
+  footer{ text-align:center; margin-top:60px; color:var(--text-mute); font-size:12px; letter-spacing:0.05em; }
 
-  @media (max-width:640px){
-    .hero{ grid-template-columns:1fr; }
-    .hero-poster{ max-width:220px; margin:0 auto; }
+  @media (max-width:520px){
+    .node.tier-0 .poster-card{ width:135px; }
+    .node.tier-1 .poster-card{ width:100px; }
   }
 </style>
 </head>
@@ -220,30 +189,30 @@
   <header>
     <div class="eyebrow">yarosfactory · ярос</div>
     <h1>Сьогодні дивимось</h1>
-    <p class="sub">Що дивимось сьогодні, що вже переглянули, і що ще попереду. Гортай стрічку вліво чи вправо.</p>
+    <p class="sub">Гортай стрічку свайпом чи стрілками — ліворуч переглянуті, праворуч заплановані.</p>
     <nav class="pagenav"><a href="archive.html">Весь архів переглянутого →</a></nav>
   </header>
 
-  <div id="heroSection"></div>
-
-  <div class="timeline-wrap">
-    <div class="timeline-label"><span>← переглянуті</span><span class="today-lbl">сьогодні</span><span>заплановані →</span></div>
-    <div class="timeline-shell">
+  <div class="carousel-wrap">
+    <div class="carousel-shell">
       <button class="arrow" id="prevBtn" aria-label="Назад">‹</button>
-      <div class="timeline-viewport" id="timeline"></div>
+      <div class="carousel" id="carousel"></div>
       <button class="arrow" id="nextBtn" aria-label="Вперед">›</button>
     </div>
   </div>
+
+  <div id="detailSection"></div>
 
   <footer>оновлюється вручну · movies.json</footer>
 </div>
 
 <script>
-let ALL_MOVIES = [];
+let MERGED = [];
 let currentIndex = 0;
+let syncScheduled = false;
 
-const heroSection = document.getElementById('heroSection');
-const timelineEl = document.getElementById('timeline');
+const carouselEl = document.getElementById('carousel');
+const detailSection = document.getElementById('detailSection');
 const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
 
@@ -252,7 +221,6 @@ function escapeHtml(str){
   d.textContent = str ?? '';
   return d.innerHTML;
 }
-
 function fmtDateLong(d){
   const dt = new Date(d);
   if(isNaN(dt)) return d;
@@ -263,18 +231,16 @@ function fmtDateShort(d){
   if(isNaN(dt)) return d;
   return dt.toLocaleDateString('uk-UA', { day:'numeric', month:'short' });
 }
-
 function todayStr(){
   const t = new Date();
   return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
 }
-
 function statusOf(m){
+  if(m.__placeholder) return 'today-empty';
   if(m.watched === todayStr()) return 'today';
   const today = new Date(); today.setHours(0,0,0,0);
   return new Date(m.watched) < today ? 'watched' : 'planned';
 }
-
 function ratingBar(rating){
   let out = '<div class="bar">';
   for(let i=1;i<=5;i++){ out += `<span class="${i<=rating ? 'filled':''}"></span>`; }
@@ -282,15 +248,24 @@ function ratingBar(rating){
   return out;
 }
 
-function renderHero(m){
+function renderDetail(m){
   if(!m){
-    heroSection.innerHTML = `<div class="empty-state">Ще немає жодного фільму. Додай записи в movies.json.</div>`;
+    detailSection.innerHTML = `<div class="empty-state">Ще немає жодного фільму. Додай записи в movies.json.</div>`;
     return;
   }
   const status = statusOf(m);
-  const posterInner = m.poster
-    ? `<img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(m.title)}</div>'">`
-    : `<div class="no-poster">${escapeHtml(m.title)}</div>`;
+
+  if(status === 'today-empty'){
+    detailSection.innerHTML = `
+      <div class="detail">
+        <div class="status-tag today-empty"><span class="dot"></span>Сьогодні</div>
+        <h2>На жаль, сьогодні нічого не заплановано</h2>
+        <p class="note">Замовити фільм на сьогоднішній перегляд можна прямо на стрімі.</p>
+        <a class="twitch-link" href="https://www.twitch.tv/yarosfactory" target="_blank" rel="noopener">Дивитись стрім на Twitch →</a>
+      </div>
+    `;
+    return;
+  }
 
   let tagHtml, extraHtml;
   if(status === 'today'){
@@ -304,60 +279,100 @@ function renderHero(m){
     extraHtml = '';
   }
 
-  heroSection.innerHTML = `
-    <div class="hero">
-      <div class="hero-poster">${posterInner}</div>
-      <div class="hero-body">
-        ${tagHtml}
-        <h2>${escapeHtml(m.title)}</h2>
-        <div class="hero-meta">${m.year || ''}${m.year ? ' · ' : ''}<span class="genre">${escapeHtml(m.genre || '')}</span></div>
-        ${extraHtml}
-        ${m.note ? `<p class="hero-note">${escapeHtml(m.note)}</p>` : ''}
-      </div>
+  detailSection.innerHTML = `
+    <div class="detail">
+      ${tagHtml}
+      <h2>${escapeHtml(m.title)}</h2>
+      <div class="meta">${m.year || ''}${m.year ? ' · ' : ''}<span class="genre">${escapeHtml(m.genre || '')}</span></div>
+      ${extraHtml}
+      ${m.note ? `<p class="note">${escapeHtml(m.note)}</p>` : ''}
     </div>
   `;
 }
 
-function renderTimeline(){
-  timelineEl.innerHTML = ALL_MOVIES.map((m, i) => {
+function renderCarousel(){
+  carouselEl.innerHTML = MERGED.map((m, i) => {
     const status = statusOf(m);
-    const inner = m.poster
-      ? `<img src="${escapeHtml(m.poster)}" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;mono&quot;>${escapeHtml((m.title||'?').charAt(0))}</span>'">`
-      : `<span class="mono">${escapeHtml((m.title||'?').charAt(0))}</span>`;
+    let inner;
+    if(m.__placeholder){
+      inner = `<span class="q">?</span>`;
+    } else {
+      inner = m.poster
+        ? `<img src="${escapeHtml(m.poster)}" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;mono&quot;>${escapeHtml(m.title||'')}</span>'">`
+        : `<span class="mono">${escapeHtml(m.title||'')}</span>`;
+    }
     const flame = status === 'today' ? '<span class="flame">🔥</span>' : '';
+    const title = m.__placeholder ? 'Сьогодні' : (m.title || '');
     return `
-      <div class="node ${status} ${i===currentIndex ? 'current':''}" data-index="${i}" title="${escapeHtml(m.title)}">
-        <div class="node-ring">${inner}${flame}</div>
+      <div class="node ${status}" data-index="${i}">
+        <div class="poster-card">${inner}${flame}</div>
+        <div class="node-title">${escapeHtml(title)}</div>
         <div class="node-date">${fmtDateShort(m.watched)}</div>
       </div>
     `;
   }).join('');
 
-  timelineEl.querySelectorAll('.node').forEach(node => {
+  carouselEl.querySelectorAll('.node').forEach(node => {
     node.addEventListener('click', () => {
-      focusIndex(parseInt(node.dataset.index, 10), true);
+      goTo(parseInt(node.dataset.index, 10), true);
     });
   });
 }
 
-function focusIndex(i, smooth){
-  if(i < 0 || i >= ALL_MOVIES.length) return;
-  currentIndex = i;
-  renderHero(ALL_MOVIES[currentIndex]);
-  timelineEl.querySelectorAll('.node').forEach(n => n.classList.toggle('current', parseInt(n.dataset.index,10) === currentIndex));
-
-  const node = timelineEl.querySelector(`.node[data-index="${i}"]`);
+function goTo(i, smooth){
+  if(i < 0 || i >= MERGED.length) return;
+  const node = carouselEl.querySelector(`.node[data-index="${i}"]`);
   if(node){
     node.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', inline: 'center', block: 'nearest' });
   }
 }
 
-prevBtn.addEventListener('click', () => focusIndex(currentIndex - 1, true));
-nextBtn.addEventListener('click', () => focusIndex(currentIndex + 1, true));
+function syncFromScroll(){
+  syncScheduled = false;
+  const nodes = Array.from(carouselEl.querySelectorAll('.node'));
+  if(nodes.length === 0) return;
+  const containerRect = carouselEl.getBoundingClientRect();
+  const centerX = containerRect.left + containerRect.width / 2;
+
+  const withDist = nodes.map(n => {
+    const r = n.getBoundingClientRect();
+    const nodeCenter = r.left + r.width / 2;
+    return { n, dist: Math.abs(nodeCenter - centerX), index: parseInt(n.dataset.index, 10) };
+  });
+  withDist.sort((a, b) => a.dist - b.dist);
+
+  withDist.forEach((item, rank) => {
+    let tier;
+    if(rank === 0) tier = 0;
+    else if(rank <= 2) tier = 1;
+    else if(rank <= 4) tier = 2;
+    else tier = 3;
+    item.n.classList.remove('tier-0', 'tier-1', 'tier-2', 'tier-3');
+    item.n.classList.add('tier-' + tier);
+  });
+
+  const newIndex = withDist[0].index;
+  if(newIndex !== currentIndex){
+    currentIndex = newIndex;
+    renderDetail(MERGED[currentIndex]);
+  }
+}
+
+function requestSync(){
+  if(syncScheduled) return;
+  syncScheduled = true;
+  requestAnimationFrame(syncFromScroll);
+}
+
+carouselEl.addEventListener('scroll', requestSync, { passive: true });
+window.addEventListener('resize', requestSync);
+
+prevBtn.addEventListener('click', () => goTo(currentIndex - 1, true));
+nextBtn.addEventListener('click', () => goTo(currentIndex + 1, true));
 
 document.addEventListener('keydown', (e) => {
-  if(e.key === 'ArrowLeft') focusIndex(currentIndex - 1, true);
-  if(e.key === 'ArrowRight') focusIndex(currentIndex + 1, true);
+  if(e.key === 'ArrowLeft') goTo(currentIndex - 1, true);
+  if(e.key === 'ArrowRight') goTo(currentIndex + 1, true);
 });
 
 fetch('movies.json')
@@ -366,31 +381,32 @@ fetch('movies.json')
     return res.json();
   })
   .then(data => {
-    ALL_MOVIES = Array.isArray(data)
-      ? data.slice().sort((a,b) => new Date(a.watched) - new Date(b.watched))
-      : [];
+    const list = Array.isArray(data) ? data.slice() : [];
+    const t = todayStr();
+    const hasToday = list.some(m => m.watched === t);
+    if(!hasToday){
+      list.push({ __placeholder: true, watched: t });
+    }
+    MERGED = list.sort((a, b) => new Date(a.watched) - new Date(b.watched));
 
-    if(ALL_MOVIES.length === 0){
-      renderHero(null);
+    if(MERGED.length === 0){
+      renderDetail(null);
       return;
     }
 
-    let startIndex = ALL_MOVIES.findIndex(m => m.watched === todayStr());
-    if(startIndex === -1){
-      const today = new Date(); today.setHours(0,0,0,0);
-      let best = 0, bestDiff = Infinity;
-      ALL_MOVIES.forEach((m, i) => {
-        const diff = Math.abs(new Date(m.watched) - today);
-        if(diff < bestDiff){ bestDiff = diff; best = i; }
-      });
-      startIndex = best;
-    }
+    renderCarousel();
+    let startIndex = MERGED.findIndex(m => m.__placeholder || m.watched === t);
+    if(startIndex === -1) startIndex = 0;
+    currentIndex = startIndex;
+    renderDetail(MERGED[currentIndex]);
 
-    renderTimeline();
-    focusIndex(startIndex, false);
+    requestAnimationFrame(() => {
+      goTo(startIndex, false);
+      requestAnimationFrame(syncFromScroll);
+    });
   })
   .catch(err => {
-    heroSection.innerHTML = `<div class="empty-state">Не вдалося завантажити список. Перевір, що файл <strong>movies.json</strong> лежить поруч з index.html.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
+    detailSection.innerHTML = `<div class="empty-state">Не вдалося завантажити список. Перевір, що файл <strong>movies.json</strong> лежить поруч з index.html.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
   });
 </script>
 
