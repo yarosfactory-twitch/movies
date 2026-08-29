@@ -163,9 +163,10 @@ function nodeHtml(idx, offset){
       : `<span class="mono">${escapeHtml(m.title||'')}</span>`;
   }
   const flame = status === 'today' ? '<span class="flame">🔥</span>' : '';
-  const showRating = m.rating && Math.abs(offset) <= 1;
-  const ratingBadge = showRating
-    ? `<div class="badge-rating"><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6h6.4l-5.2 4 2 6.4L10 13.8 4.2 17.4l2-6.4L1 7h6.4z"/></svg>${m.rating}</div>`
+  const showBadge = !m.__placeholder && Math.abs(offset) <= 1;
+  const hostRating = m.rating ? (Number.isInteger(m.rating) ? m.rating : m.rating.toFixed(1)) : '';
+  const ratingBadge = showBadge
+    ? `<div class="badge-rating" ${hostRating ? '' : 'style="display:none"'}><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6h6.4l-5.2 4 2 6.4L10 13.8 4.2 17.4l2-6.4L1 7h6.4z"/></svg><span class="val">${hostRating}</span></div>`
     : '';
   const title = m.__placeholder ? 'Сьогодні' : (m.title || '');
   return `
@@ -193,6 +194,33 @@ function renderWindow(){
 
   prevBtn.disabled = currentIndex <= 0;
   nextBtn.disabled = currentIndex >= MERGED.length - 1;
+
+  attachViewerRatings();
+}
+
+let ratingUnsubs = [];
+function attachViewerRatings(){
+  ratingUnsubs.forEach(unsub => unsub());
+  ratingUnsubs = [];
+  if(!firebaseReady) return;
+
+  track.querySelectorAll('.node[data-index] .badge-rating').forEach(badge => {
+    const node = badge.closest('.node');
+    const idx = parseInt(node.dataset.index, 10);
+    const m = MERGED[idx];
+    if(!m || m.__placeholder) return;
+    const id = movieId(m);
+    const valEl = badge.querySelector('.val');
+    const unsub = db.collection('reactions').doc(id).onSnapshot(snap => {
+      const data = snap.exists ? snap.data() : {};
+      const count = data.ratingCount || 0;
+      if(count > 0){
+        valEl.textContent = (data.ratingSum / count).toFixed(1);
+        badge.style.display = '';
+      }
+    }, err => console.warn('Помилка Firestore (rating badge):', err.message));
+    ratingUnsubs.push(unsub);
+  });
 }
 
 function setCurrent(i){
