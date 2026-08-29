@@ -73,6 +73,76 @@ function genresOf(m){
   return Array.isArray(m.genre) ? m.genre.filter(Boolean) : [m.genre];
 }
 
+/* ---- Оцінка глядачів (1-10): container — DOM-елемент, movie — об'єкт фільму ---- */
+function renderViewerRating(container, movie){
+  if(!firebaseReady){
+    container.innerHTML = '';
+    return;
+  }
+  const id = movieId(movie);
+  const docRef = db.collection('reactions').doc(id);
+  const myKey = 'myRating:' + id;
+  let myRating = parseInt(localStorage.getItem(myKey) || '0', 10) || 0;
+
+  container.innerHTML = `
+    <div class="viewer-rating">
+      <h3>Оцінка глядачів</h3>
+      <div class="rating-avg" id="ratingAvg">Ще немає оцінок</div>
+      <div class="rate-hint">${myRating ? 'Твоя оцінка — можеш змінити:' : 'Постав свою оцінку:'}</div>
+      <div class="rate-picker" id="ratePicker">
+        ${Array.from({length:10}, (_, i) => i + 1).map(n => `<button type="button" data-val="${n}">${n}</button>`).join('')}
+      </div>
+    </div>
+  `;
+
+  const avgEl = document.getElementById('ratingAvg');
+  const picker = document.getElementById('ratePicker');
+  const buttons = [...picker.querySelectorAll('button')];
+
+  function paint(highlight){
+    buttons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.val, 10) <= highlight));
+  }
+  paint(myRating);
+
+  picker.addEventListener('mouseover', (e) => {
+    const val = e.target.dataset.val;
+    if(val) paint(parseInt(val, 10));
+  });
+  picker.addEventListener('mouseleave', () => paint(myRating));
+
+  docRef.onSnapshot(snap => {
+    const data = snap.exists ? snap.data() : {};
+    const sum = data.ratingSum || 0;
+    const count = data.ratingCount || 0;
+    avgEl.textContent = count > 0
+      ? `${(sum / count).toFixed(1)} / 10 · ${count} ${count === 1 ? 'оцінка' : 'оцінок'}`
+      : 'Ще немає оцінок';
+  }, err => console.warn('Помилка Firestore (rating):', err.message));
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const newVal = parseInt(btn.dataset.val, 10);
+      const oldVal = myRating;
+      if(newVal === oldVal) return;
+      myRating = newVal;
+      localStorage.setItem(myKey, String(newVal));
+      paint(newVal);
+      container.querySelector('.rate-hint').textContent = 'Твоя оцінка — можеш змінити:';
+
+      db.runTransaction(tx => {
+        return tx.get(docRef).then(snap => {
+          const data = snap.exists ? snap.data() : {};
+          const sum = data.ratingSum || 0;
+          const count = data.ratingCount || 0;
+          const newSum = oldVal ? (sum - oldVal + newVal) : (sum + newVal);
+          const newCount = oldVal ? count : count + 1;
+          tx.set(docRef, { ratingSum: newSum, ratingCount: newCount }, { merge: true });
+        });
+      }).catch(err => console.warn('Не вдалося зберегти оцінку:', err.message));
+    });
+  });
+}
+
 /* ---- Реакції: container — DOM-елемент, movie — об'єкт фільму з movies.json ---- */
 function renderReactions(container, movie){
   if(!firebaseReady){
