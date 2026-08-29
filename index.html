@@ -7,64 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<link rel="stylesheet" href="common.css">
 <style>
   :root{
-    --bg:#120e0a;
-    --bg-glow: radial-gradient(1200px 600px at 50% -10%, rgba(176,141,87,0.10), transparent 60%);
-    --panel:#1b1610;
-    --panel-2:#211a12;
-    --border:#3a2f20;
-    --border-soft: rgba(176,141,87,0.25);
-    --gold:#b08d57;
-    --gold-bright:#e0bb7d;
-    --teal:#537468;
-    --text:#e9e0cd;
-    --text-dim:#a89b83;
-    --text-mute:#75695a;
     --tier2-w: clamp(70px, 9vw, 116px);
     --tier1-w: clamp(100px, 13vw, 168px);
     --tier0-w: clamp(140px, 18vw, 228px);
     --slot-h: calc(var(--tier0-w) * 1.5);
   }
-
-  *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-  body{
-    margin:0;
-    background: var(--bg-glow), var(--bg);
-    color:var(--text);
-    font-family:'Golos Text', sans-serif;
-    min-height:100vh;
-    -webkit-font-smoothing:antialiased;
-    overflow-x:hidden;
-  }
-
-  .wrap{ max-width:1100px; margin:0 auto; padding:52px 16px 90px; }
-
-  header{ text-align:center; margin-bottom:36px; }
-  .eyebrow{
-    font-size:12px; letter-spacing:0.35em; text-transform:uppercase; color:var(--text-mute);
-    margin-bottom:16px; display:flex; align-items:center; justify-content:center; gap:14px;
-  }
-  .eyebrow::before, .eyebrow::after{ content:""; height:1px; width:48px; background:linear-gradient(90deg, transparent, var(--border-soft)); }
-  .eyebrow::after{ background:linear-gradient(90deg, var(--border-soft), transparent); }
-
-  h1{
-    font-family:'Yeseva One', serif; font-weight:400; font-size:clamp(28px, 4.5vw, 44px);
-    letter-spacing:0.02em; margin:0 0 10px; color:var(--gold-bright);
-    text-shadow:0 0 40px rgba(224,187,125,0.18);
-  }
-  .sub{ color:var(--text-dim); font-size:14.5px; max-width:480px; margin:0 auto; line-height:1.6; }
-
-  .pagenav{ margin-top:20px; }
-  .pagenav a{
-    color:var(--text-mute); font-size:12px; letter-spacing:0.08em; text-transform:uppercase;
-    text-decoration:none; border-bottom:1px solid var(--border); padding-bottom:2px;
-    transition:color .15s, border-color .15s;
-  }
-  .pagenav a:hover{ color:var(--gold-bright); border-color:var(--gold); }
 
   /* ---------- Carousel (fixed 5-slot stage) ---------- */
   .carousel-shell{ position:relative; display:flex; align-items:center; gap:8px; }
@@ -94,7 +44,7 @@
     cursor:pointer;
     animation:fadein .22s ease;
   }
-  .node.empty{ cursor:default; }
+  .node.empty, .node.today-empty{ cursor:default; }
   @keyframes fadein{ from{ opacity:0; } to{ opacity:1; } }
 
   .poster-slot{
@@ -142,106 +92,11 @@
   .node[data-offset="2"] .node-title, .node[data-offset="-2"] .node-title,
   .node[data-offset="2"] .node-date, .node[data-offset="-2"] .node-date{ display:none; }
 
-  /* ---------- Detail panel ---------- */
-  .detail{
-    max-width:560px; margin:26px auto 0; text-align:center;
-    background:var(--panel); border:1px solid var(--border); padding:26px 28px; position:relative;
+  .today-banner{
+    max-width:520px; margin:26px auto 0; text-align:center;
+    background:var(--panel); border:1px solid var(--border); padding:20px 24px;
   }
-  .detail::before, .detail::after{ content:""; position:absolute; width:16px; height:16px; opacity:0.8; }
-  .detail::before{ top:8px; left:8px; border-top:1px solid var(--gold); border-left:1px solid var(--gold); }
-  .detail::after{ bottom:8px; right:8px; border-bottom:1px solid var(--gold); border-right:1px solid var(--gold); }
-
-  .status-tag{
-    display:inline-flex; align-items:center; gap:6px;
-    font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
-    padding:6px 12px; border:1px solid var(--border-soft); color:var(--gold-bright);
-    margin-bottom:14px;
-  }
-  .status-tag.watched{ color:var(--teal); border-color:rgba(83,116,104,0.4); }
-  .status-tag.planned, .status-tag.today-empty{ color:var(--text-mute); border-color:var(--border); }
-  .status-tag .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; }
-
-  .detail h2{
-    font-family:'Yeseva One', serif; font-weight:400;
-    font-size:clamp(20px, 3vw, 27px); color:var(--text); margin:0 0 10px; line-height:1.3;
-  }
-  .detail .meta{ font-size:12.5px; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:14px; }
-  .detail .meta .genre{ color:var(--teal); }
-
-  .bar{ display:flex; gap:3px; margin:0 auto 14px; max-width:170px; }
-  .bar span{ height:5px; flex:1; background:var(--panel-2); border:1px solid var(--border); }
-  .bar span.filled{ background:var(--gold); border-color:var(--gold-bright); }
-
-  .twitch-link{
-    display:inline-flex; align-items:center; gap:8px; margin-top:16px;
-    border:1px solid var(--gold); color:var(--gold-bright); text-decoration:none;
-    padding:10px 20px; font-size:13px; letter-spacing:0.05em; text-transform:uppercase;
-    transition:background .18s, color .18s;
-  }
-  .twitch-link:hover{ background:var(--gold); color:#1b1610; }
-
-  .empty-state{
-    text-align:center; padding:60px 20px; color:var(--text-mute); font-size:14px;
-    border:1px dashed var(--border); margin-top:20px;
-  }
-
-  /* ---------- Reactions ---------- */
-  .reactions{
-    max-width:560px; margin:16px auto 0;
-    display:flex; justify-content:center; gap:8px; flex-wrap:wrap;
-  }
-  .reaction-btn{
-    display:flex; flex-direction:column; align-items:center; gap:3px;
-    background:var(--panel-2); border:1px solid var(--border);
-    padding:8px 12px; cursor:pointer; font-family:inherit;
-    transition:border-color .15s, transform .1s;
-  }
-  .reaction-btn:hover{ border-color:var(--gold); }
-  .reaction-btn:active{ transform:scale(0.94); }
-  .reaction-btn.reacted{ border-color:var(--gold-bright); background:rgba(224,187,125,0.08); }
-  .reaction-btn .emoji{ font-size:18px; line-height:1; }
-  .reaction-btn .count{ font-size:11px; color:var(--text-mute); }
-  .reaction-btn.reacted .count{ color:var(--gold-bright); }
-
-  /* ---------- Comments ---------- */
-  .comments{ max-width:560px; margin:22px auto 0; }
-  .comments h3{
-    font-family:'Yeseva One', serif; font-weight:400; font-size:16px;
-    color:var(--gold-bright); margin:0 0 14px; text-align:left;
-  }
-  .comment-form{ display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
-  .comment-form input, .comment-form textarea{
-    background:var(--panel-2); border:1px solid var(--border); color:var(--text);
-    padding:10px 12px; font-family:'Golos Text', sans-serif; font-size:13.5px; outline:none;
-    resize:vertical; transition:border-color .2s;
-  }
-  .comment-form input::placeholder, .comment-form textarea::placeholder{ color:var(--text-mute); }
-  .comment-form input:focus, .comment-form textarea:focus{ border-color:var(--gold); }
-  .comment-form button{
-    align-self:flex-end;
-    background:var(--gold); border:1px solid var(--gold); color:#1b1610;
-    padding:9px 20px; font-size:12.5px; letter-spacing:0.05em; text-transform:uppercase;
-    cursor:pointer; font-weight:600; transition:background .15s;
-  }
-  .comment-form button:hover{ background:var(--gold-bright); }
-  .comment-form button:disabled{ opacity:0.5; cursor:default; }
-  .comment-hint{ font-size:11px; color:var(--text-mute); text-align:left; }
-
-  .comment-list{ display:flex; flex-direction:column; gap:12px; }
-  .comment-item{
-    border:1px solid var(--border); background:var(--panel); padding:12px 14px; text-align:left;
-  }
-  .comment-item .c-head{
-    display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;
-    gap:10px;
-  }
-  .comment-item .c-name{ font-size:12.5px; color:var(--gold-bright); font-weight:600; }
-  .comment-item .c-date{ font-size:10.5px; color:var(--text-mute); white-space:nowrap; }
-  .comment-item .c-text{ font-size:13.5px; color:var(--text-dim); line-height:1.5; white-space:pre-wrap; word-break:break-word; }
-  .comments-empty{ font-size:13px; color:var(--text-mute); text-align:center; padding:14px 0; }
-  .comments-loading{ font-size:12px; color:var(--text-mute); text-align:center; padding:10px 0; }
-
-  footer{ text-align:center; margin-top:60px; color:var(--text-mute); font-size:12px; letter-spacing:0.05em; }
+  .today-banner p{ font-size:13.5px; color:var(--text-dim); margin:0 0 4px; }
 </style>
 </head>
 <body>
@@ -250,7 +105,7 @@
   <header>
     <div class="eyebrow">yarosfactory · ярос</div>
     <h1>Сьогодні дивимось</h1>
-    <p class="sub">Гортай стрічку свайпом чи стрілками — ліворуч переглянуті, праворуч заплановані.</p>
+    <p class="sub">Гортай стрічку свайпом чи стрілками, тицяй на картку — відкриється сторінка фільму.</p>
     <nav class="pagenav"><a href="archive.html">Весь архів переглянутого →</a></nav>
   </header>
 
@@ -262,261 +117,35 @@
     <button class="arrow" id="nextBtn" aria-label="Вперед">›</button>
   </div>
 
-  <div id="detailSection"></div>
-  <div id="reactionsSection"></div>
-  <div id="commentsSection"></div>
+  <div id="bannerSection"></div>
 
   <footer>оновлюється вручну · movies.json</footer>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="common.js"></script>
 <script>
-/* ====== FIREBASE SETUP ======
-   1) Створи безкоштовний проєкт на https://console.firebase.google.com
-   2) Увімкни Firestore Database (у продакшн-режимі з правилами з README)
-   3) Project settings → Your apps → Web app → скопіюй конфіг і встав нижче
-*/
-const firebaseConfig = {
-  apiKey: "AIzaSyDBsSNsFXlFymLW9VwB_TLBsKnqsR_GcPM",
-  authDomain: "yarosfactory-movies.firebaseapp.com",
-  projectId: "yarosfactory-movies",
-  storageBucket: "yarosfactory-movies.firebasestorage.app",
-  messagingSenderId: "616449635479",
-  appId: "1:616449635479:web:46a2f16bcc1e2e8b85a5d2"
-};
-
-let db = null;
-let firebaseReady = false;
-try{
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-  firebaseReady = true;
-}catch(e){
-  console.warn('Firebase не налаштовано:', e.message);
-}
-
-const REACTION_EMOJIS = [
-  { key:'fire', emoji:'🔥' },
-  { key:'heart', emoji:'❤️' },
-  { key:'laugh', emoji:'😂' },
-  { key:'sad', emoji:'😢' },
-  { key:'sick', emoji:'🤢' }
-];
-
-function slugify(str){
-  return (str || 'movie')
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, '-')
-    .replace(/^-+|-+$/g, '') || 'movie';
-}
-function movieId(m){ return m.id || slugify(m.title); }
-
 let MERGED = [];
 let currentIndex = 0;
-let unsubReactions = null;
-let unsubComments = null;
 
 const stage = document.getElementById('stage');
 const track = document.getElementById('track');
-const detailSection = document.getElementById('detailSection');
-const reactionsSection = document.getElementById('reactionsSection');
-const commentsSection = document.getElementById('commentsSection');
+const bannerSection = document.getElementById('bannerSection');
 const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
 
-function escapeHtml(str){
-  const d = document.createElement('div');
-  d.textContent = str ?? '';
-  return d.innerHTML;
-}
-function fmtDateLong(d){
-  const dt = new Date(d);
-  if(isNaN(dt)) return d;
-  return dt.toLocaleDateString('uk-UA', { day:'numeric', month:'long', year:'numeric' });
-}
-function fmtDateShort(d){
-  const dt = new Date(d);
-  if(isNaN(dt)) return d;
-  return dt.toLocaleDateString('uk-UA', { day:'numeric', month:'short' });
-}
-function todayStr(){
-  const t = new Date();
-  return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
-}
-function statusOf(m){
-  if(m.__placeholder) return 'today-empty';
-  if(m.watched === todayStr()) return 'today';
-  const today = new Date(); today.setHours(0,0,0,0);
-  return new Date(m.watched) < today ? 'watched' : 'planned';
-}
-function ratingBar(rating){
-  let out = '<div class="bar">';
-  for(let i=1;i<=5;i++){ out += `<span class="${i<=rating ? 'filled':''}"></span>`; }
-  out += '</div>';
-  return out;
-}
-
-function renderDetail(m){
-  if(!m){
-    detailSection.innerHTML = `<div class="empty-state">Ще немає жодного фільму. Додай записи в movies.json.</div>`;
-    reactionsSection.innerHTML = '';
-    commentsSection.innerHTML = '';
-    return;
-  }
-  const status = statusOf(m);
-
-  if(status === 'today-empty'){
-    detailSection.innerHTML = `
-      <div class="detail">
-        <div class="status-tag today-empty"><span class="dot"></span>Сьогодні</div>
-        <h2>На жаль, сьогодні нічого не заплановано</h2>
-        <p class="note">Замовити фільм на сьогоднішній перегляд можна прямо на стрімі.</p>
-        <a class="twitch-link" href="https://www.twitch.tv/yarosfactory" target="_blank" rel="noopener">Дивитись стрім на Twitch →</a>
+function renderBanner(m){
+  if(m && statusOf(m) === 'today-empty'){
+    bannerSection.innerHTML = `
+      <div class="today-banner">
+        <p>На жаль, сьогодні нічого не заплановано.</p>
+        <a class="twitch-link" href="https://www.twitch.tv/yarosfactory" target="_blank" rel="noopener">Замовити на стрімі →</a>
       </div>
     `;
-    reactionsSection.innerHTML = '';
-    commentsSection.innerHTML = '';
-    return;
-  }
-
-  let tagHtml, extraHtml;
-  if(status === 'today'){
-    tagHtml = `<div class="status-tag today"><span class="dot"></span>Сьогодні</div>`;
-    extraHtml = m.rating ? ratingBar(m.rating) : '';
-  } else if(status === 'watched'){
-    tagHtml = `<div class="status-tag watched"><span class="dot"></span>Переглянуто ${fmtDateLong(m.watched)}</div>`;
-    extraHtml = ratingBar(m.rating || 0);
   } else {
-    tagHtml = `<div class="status-tag planned"><span class="dot"></span>Заплановано на ${fmtDateLong(m.watched)}</div>`;
-    extraHtml = '';
+    bannerSection.innerHTML = '';
   }
-
-  detailSection.innerHTML = `
-    <div class="detail">
-      ${tagHtml}
-      <h2>${escapeHtml(m.title)}</h2>
-      <div class="meta">${m.year || ''}${m.year ? ' · ' : ''}<span class="genre">${escapeHtml(m.genre || '')}</span></div>
-      ${extraHtml}
-    </div>
-  `;
-
-  renderReactions(m);
-  renderComments(m);
-}
-
-function renderReactions(m){
-  if(unsubReactions){ unsubReactions(); unsubReactions = null; }
-
-  if(!firebaseReady){
-    reactionsSection.innerHTML = `<div class="comments-loading">Реакції глядачів вимкнено — не налаштовано Firebase (див. README).</div>`;
-    return;
-  }
-
-  const id = movieId(m);
-  const docRef = db.collection('reactions').doc(id);
-  const reactedKey = 'reacted:' + id;
-  let reactedSet = new Set();
-  try{ reactedSet = new Set(JSON.parse(localStorage.getItem(reactedKey) || '[]')); }catch(e){}
-
-  reactionsSection.innerHTML = `<div class="reactions">${REACTION_EMOJIS.map(r => `
-    <button class="reaction-btn ${reactedSet.has(r.key) ? 'reacted' : ''}" data-key="${r.key}">
-      <span class="emoji">${r.emoji}</span>
-      <span class="count" id="count-${r.key}">0</span>
-    </button>
-  `).join('')}</div>`;
-
-  unsubReactions = docRef.onSnapshot(snap => {
-    const data = snap.exists ? snap.data() : {};
-    REACTION_EMOJIS.forEach(r => {
-      const el = document.getElementById('count-' + r.key);
-      if(el) el.textContent = data[r.key] || 0;
-    });
-  }, err => console.warn('Помилка Firestore (reactions):', err.message));
-
-  reactionsSection.querySelectorAll('.reaction-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const key = btn.dataset.key;
-      if(reactedSet.has(key)) return;
-      reactedSet.add(key);
-      localStorage.setItem(reactedKey, JSON.stringify([...reactedSet]));
-      btn.classList.add('reacted');
-      docRef.set({ [key]: firebase.firestore.FieldValue.increment(1) }, { merge: true })
-        .catch(err => console.warn('Не вдалося зберегти реакцію:', err.message));
-    });
-  });
-}
-
-function renderComments(m){
-  if(unsubComments){ unsubComments(); unsubComments = null; }
-
-  if(!firebaseReady){
-    commentsSection.innerHTML = '';
-    return;
-  }
-
-  const id = movieId(m);
-  const colRef = db.collection('reactions').doc(id).collection('comments');
-
-  commentsSection.innerHTML = `
-    <div class="comments">
-      <h3>Коментарі глядачів</h3>
-      <form class="comment-form" id="commentForm">
-        <input type="text" id="commentName" placeholder="Ім'я (необов'язково)" maxlength="40">
-        <textarea id="commentText" placeholder="Що думаєш про цей фільм?" rows="3" maxlength="400" required></textarea>
-        <div class="comment-hint">До 400 символів. Коментарі видно всім глядачам сайту.</div>
-        <button type="submit">Надіслати</button>
-      </form>
-      <div class="comment-list" id="commentList"><div class="comments-loading">Завантаження…</div></div>
-    </div>
-  `;
-
-  const form = document.getElementById('commentForm');
-  const nameInput = document.getElementById('commentName');
-  const textInput = document.getElementById('commentText');
-  const listEl = document.getElementById('commentList');
-  const submitBtn = form.querySelector('button');
-
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const text = textInput.value.trim();
-    if(!text) return;
-    submitBtn.disabled = true;
-    colRef.add({
-      name: nameInput.value.trim().slice(0, 40) || 'Глядач',
-      text: text.slice(0, 400),
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-      textInput.value = '';
-    }).catch(err => {
-      console.warn('Не вдалося надіслати коментар:', err.message);
-    }).finally(() => {
-      submitBtn.disabled = false;
-    });
-  });
-
-  unsubComments = colRef.orderBy('createdAt', 'desc').limit(50).onSnapshot(snap => {
-    if(snap.empty){
-      listEl.innerHTML = `<div class="comments-empty">Ще немає коментарів — стань першим.</div>`;
-      return;
-    }
-    listEl.innerHTML = snap.docs.map(doc => {
-      const c = doc.data();
-      const dateStr = c.createdAt && c.createdAt.toDate ? fmtDateShort(c.createdAt.toDate()) : '';
-      return `
-        <div class="comment-item">
-          <div class="c-head">
-            <span class="c-name">${escapeHtml(c.name || 'Глядач')}</span>
-            <span class="c-date">${dateStr}</span>
-          </div>
-          <div class="c-text">${escapeHtml(c.text || '')}</div>
-        </div>
-      `;
-    }).join('');
-  }, err => {
-    console.warn('Помилка Firestore (comments):', err.message);
-    listEl.innerHTML = `<div class="comments-empty">Не вдалося завантажити коментарі.</div>`;
-  });
 }
 
 function nodeHtml(idx, offset){
@@ -549,9 +178,12 @@ function renderWindow(){
   track.innerHTML = offsets.map(off => nodeHtml(currentIndex + off, off)).join('');
 
   track.querySelectorAll('.node[data-index]').forEach(node => {
+    const idx = parseInt(node.dataset.index, 10);
+    const m = MERGED[idx];
+    if(m.__placeholder) return;
     node.addEventListener('click', () => {
       if(dragMoved) return;
-      setCurrent(parseInt(node.dataset.index, 10));
+      window.location.href = 'movie.html?id=' + encodeURIComponent(movieId(m));
     });
   });
 
@@ -563,7 +195,7 @@ function setCurrent(i){
   if(i < 0 || i >= MERGED.length || i === currentIndex) return;
   currentIndex = i;
   renderWindow();
-  renderDetail(MERGED[currentIndex]);
+  renderBanner(MERGED[currentIndex]);
 }
 
 prevBtn.addEventListener('click', () => setCurrent(currentIndex - 1));
@@ -612,7 +244,7 @@ fetch('movies.json')
     MERGED = list.sort((a, b) => new Date(a.watched) - new Date(b.watched));
 
     if(MERGED.length === 0){
-      renderDetail(null);
+      bannerSection.innerHTML = `<div class="empty-state">Ще немає жодного фільму. Додай записи в movies.json.</div>`;
       return;
     }
 
@@ -621,10 +253,10 @@ fetch('movies.json')
     currentIndex = startIndex;
 
     renderWindow();
-    renderDetail(MERGED[currentIndex]);
+    renderBanner(MERGED[currentIndex]);
   })
   .catch(err => {
-    detailSection.innerHTML = `<div class="empty-state">Не вдалося завантажити список. Перевір, що файл <strong>movies.json</strong> лежить поруч з index.html.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
+    bannerSection.innerHTML = `<div class="empty-state">Не вдалося завантажити список. Перевір, що файл <strong>movies.json</strong> лежить поруч з index.html.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
   });
 </script>
 
