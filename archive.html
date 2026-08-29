@@ -34,6 +34,13 @@
   .search input::placeholder{ color:var(--text-mute); }
   .search input:focus{ border-color:var(--gold); }
 
+  .sort-select{
+    background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:11px 14px; font-family:'Golos Text', sans-serif; font-size:13px; outline:none;
+    cursor:pointer; transition:border-color .2s;
+  }
+  .sort-select:focus, .sort-select:hover{ border-color:var(--gold); }
+
   .chips{ display:flex; gap:8px; flex-wrap:wrap; }
   .chip{
     border:1px solid var(--border); background:transparent; color:var(--text-dim);
@@ -112,6 +119,10 @@
     <div class="search">
       <input type="text" id="searchInput" placeholder="Пошук за назвою…">
     </div>
+    <select class="sort-select" id="sortSelect">
+      <option value="date">Спочатку нові</option>
+      <option value="rating">За оцінкою</option>
+    </select>
     <div class="chips" id="genreChips"></div>
   </div>
 
@@ -128,11 +139,13 @@
 <script>
 let ALL_MOVIES = [];
 let activeGenre = 'Усі';
+let sortMode = 'date';
 
 const grid = document.getElementById('grid');
 const statsEl = document.getElementById('stats');
 const chipsEl = document.getElementById('genreChips');
 const searchInput = document.getElementById('searchInput');
+const sortSelect = document.getElementById('sortSelect');
 
 function render(){
   const q = searchInput.value.trim().toLowerCase();
@@ -141,6 +154,12 @@ function render(){
     const matchesQuery = !q || (m.title || '').toLowerCase().includes(q);
     return matchesGenre && matchesQuery;
   });
+
+  if(sortMode === 'rating'){
+    filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  } else {
+    filtered.sort((a, b) => new Date(b.watched) - new Date(a.watched));
+  }
 
   if(filtered.length === 0){
     grid.innerHTML = '<div class="empty">Нічого не знайдено. Спробуй інший фільтр.</div>';
@@ -210,6 +229,10 @@ function buildChips(){
 }
 
 searchInput.addEventListener('input', render);
+sortSelect.addEventListener('change', () => {
+  sortMode = sortSelect.value;
+  render();
+});
 
 fetch('movies.json')
   .then(res => {
