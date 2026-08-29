@@ -71,13 +71,6 @@
   .poster .corner-tr{ top:6px; right:6px; border-top:1px solid var(--gold-bright); border-right:1px solid var(--gold-bright); }
   .poster .corner-br{ bottom:6px; left:6px; border-bottom:1px solid var(--gold-bright); border-left:1px solid var(--gold-bright); }
 
-  .badge-rating{
-    position:absolute; top:8px; left:8px; z-index:2; background:rgba(18,14,10,0.82); border:1px solid var(--border-soft);
-    color:var(--gold-bright); font-size:11px; font-weight:600; letter-spacing:0.03em; padding:4px 8px;
-    display:flex; align-items:center; gap:4px;
-  }
-  .badge-rating svg{ width:10px; height:10px; fill:var(--gold-bright); }
-
   .badge-genre{
     position:absolute; top:8px; right:8px; z-index:2; background:rgba(18,14,10,0.82); border:1px solid var(--border);
     color:var(--teal); font-size:10px; text-transform:uppercase; letter-spacing:0.06em; padding:4px 7px;
@@ -144,7 +137,7 @@ const searchInput = document.getElementById('searchInput');
 function render(){
   const q = searchInput.value.trim().toLowerCase();
   const filtered = ALL_MOVIES.filter(m => {
-    const matchesGenre = activeGenre === 'Усі' || m.genre === activeGenre;
+    const matchesGenre = activeGenre === 'Усі' || genresOf(m).includes(activeGenre);
     const matchesQuery = !q || (m.title || '').toLowerCase().includes(q);
     return matchesGenre && matchesQuery;
   });
@@ -158,14 +151,15 @@ function render(){
     const posterInner = m.poster
       ? `<img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(m.title)}</div>'">`
       : `<div class="no-poster">${escapeHtml(m.title)}</div>`;
+    const genreLabel = genresOf(m).join(' · ');
 
     return `
     <div class="card" style="animation-delay:${Math.min(i*35, 350)}ms" data-id="${escapeHtml(movieId(m))}">
       <div class="poster">
         ${posterInner}
         <div class="corner-tr"></div><div class="corner-br"></div>
-        ${m.rating ? `<div class="badge-rating"><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6h6.4l-5.2 4 2 6.4L10 13.8 4.2 17.4l2-6.4L1 7h6.4z"/></svg>${m.rating.toFixed ? m.rating.toFixed(1) : m.rating}</div>` : ''}
-        ${m.genre ? `<div class="badge-genre">${escapeHtml(m.genre)}</div>` : ''}
+        ${m.rating ? `<div class="badge-rating"><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6h6.4l-5.2 4 2 6.4L10 13.8 4.2 17.4l2-6.4L1 7h6.4z"/></svg>${Number.isInteger(m.rating) ? m.rating : m.rating.toFixed(1)}</div>` : ''}
+        ${genreLabel ? `<div class="badge-genre">${escapeHtml(genreLabel)}</div>` : ''}
         <div class="poster-overlay">
           <div class="date">переглянуто ${fmtDateLong(m.watched)}</div>
         </div>
@@ -200,7 +194,7 @@ function buildStats(){
 }
 
 function buildChips(){
-  const genres = ['Усі', ...new Set(ALL_MOVIES.map(m=>m.genre).filter(Boolean))];
+  const genres = ['Усі', ...new Set(ALL_MOVIES.flatMap(m => genresOf(m)))];
   chipsEl.innerHTML = genres.map(g =>
     `<button class="chip ${g===activeGenre?'active':''}" data-genre="${escapeHtml(g)}">${escapeHtml(g)}</button>`
   ).join('');
