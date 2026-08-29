@@ -2,9 +2,9 @@
   {
     "title": "Дюна: Частина друга",
     "year": 2024,
-    "genre": "Фантастика",
+    "genre": ["Фантастика", "Пригоди"],
     "watched": "2026-08-14",
-    "rating": 5,
+    "rating": 9,
     "note": "Переглянуто спільно в чаті — епічна другa частина, всі чекають третю.",
     "poster": "https://image.tmdb.org/t/p/w500/6ytPHimWtZDVObGcSmazMo4noRc.jpg"
   },
@@ -13,16 +13,16 @@
     "year": 2018,
     "genre": "Хорор",
     "watched": "2026-07-30",
-    "rating": 4,
+    "rating": 8,
     "note": "Ідеально під нічний стрім — глядачі в чаті майже не дихали.",
     "poster": "https://placehold.co/400x600/1b1610/e0bb7d?text=%D0%A2%D0%B8%D1%85%D0%B5+%D0%BC%D1%96%D1%81%D1%86%D0%B5"
   },
   {
     "title": "Зона інтересів",
     "year": 2023,
-    "genre": "Драма",
+    "genre": ["Драма", "Комедія"],
     "watched": "2026-07-10",
-    "rating": 5,
+    "rating": 9,
     "note": "Важкий, але сильний фільм. Обговорення розтягнулось на весь стрім.",
     "poster": ""
   },
@@ -31,7 +31,7 @@
     "year": 2024,
     "genre": "Трилер",
     "watched": "2026-06-22",
-    "rating": 3,
+    "rating": 6,
     "note": "Приклад запису — онови на свій.",
     "poster": "https://placehold.co/400x600/1b1610/e0bb7d?text=%D0%9A%D0%B0%D0%BB%D1%8C%D0%BC%D0%B0%D1%80"
   },
