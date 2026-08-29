@@ -87,6 +87,22 @@ h1{
   border:1px dashed var(--border); margin-top:20px;
 }
 
+/* ---------- Viewer rating ---------- */
+.viewer-rating h3{
+  font-family:'Yeseva One', serif; font-weight:400; font-size:16px;
+  color:var(--gold-bright); margin:0 0 10px;
+}
+.rating-avg{ font-size:14px; color:var(--text); margin-bottom:14px; }
+.rate-hint{ font-size:11.5px; color:var(--text-mute); margin-bottom:8px; }
+.rate-picker{ display:flex; gap:5px; flex-wrap:wrap; }
+.rate-picker button{
+  width:30px; height:30px; border:1px solid var(--border); background:var(--panel-2);
+  color:var(--text-dim); font-family:'Golos Text', sans-serif; font-size:12.5px; font-weight:600;
+  cursor:pointer; transition:background .12s, border-color .12s, color .12s;
+}
+.rate-picker button:hover{ border-color:var(--gold); }
+.rate-picker button.active{ background:var(--gold); border-color:var(--gold-bright); color:#1b1610; }
+
 /* ---------- Reactions ---------- */
 .reactions{ display:flex; gap:8px; flex-wrap:wrap; }
 .reaction-btn{
