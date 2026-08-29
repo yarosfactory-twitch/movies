@@ -21,6 +21,7 @@
     --text:#e9e0cd;
     --text-dim:#a89b83;
     --text-mute:#75695a;
+    --slot-h:255px;
   }
 
   *{box-sizing:border-box;}
@@ -60,41 +61,49 @@
   }
   .pagenav a:hover{ color:var(--gold-bright); border-color:var(--gold); }
 
-  /* ---------- Carousel ---------- */
-  .carousel-wrap{ position:relative; }
-  .carousel-shell{ position:relative; display:flex; align-items:center; }
+  /* ---------- Carousel (fixed 5-slot stage) ---------- */
+  .carousel-shell{ position:relative; display:flex; align-items:center; gap:8px; }
 
   .arrow{
     flex:0 0 auto; width:34px; height:34px; border:1px solid var(--border);
     background:rgba(27,22,16,0.7); color:var(--text-dim); cursor:pointer;
     display:flex; align-items:center; justify-content:center; font-size:16px;
-    transition:border-color .15s, color .15s; position:relative; z-index:3;
+    transition:border-color .15s, color .15s;
   }
   .arrow:hover{ border-color:var(--gold); color:var(--gold-bright); }
+  .arrow:disabled{ opacity:0.3; cursor:default; pointer-events:none; }
 
-  .carousel{
-    flex:1; overflow-x:auto; overflow-y:hidden;
-    scroll-snap-type:x mandatory;
-    display:flex; align-items:flex-start;
-    scrollbar-width:none;
-    padding:24px 0 10px;
+  .stage{ flex:1; overflow:hidden; touch-action:pan-y; user-select:none; }
+
+  .track{
+    display:grid;
+    grid-template-columns: 92px 128px 172px 128px 92px;
+    column-gap:12px;
+    justify-content:center;
+    align-items:start;
+    padding:16px 0 8px;
   }
-  .carousel::-webkit-scrollbar{ display:none; }
 
   .node{
-    flex:0 0 auto;
-    scroll-snap-align:center;
-    padding:0 12px;
     display:flex; flex-direction:column; align-items:center; gap:8px;
     cursor:pointer;
+    animation:fadein .22s ease;
+  }
+  .node.empty{ cursor:default; }
+  @keyframes fadein{ from{ opacity:0; } to{ opacity:1; } }
+
+  .poster-slot{
+    height:var(--slot-h);
+    width:100%;
+    display:flex; align-items:center; justify-content:center;
   }
 
   .poster-card{
-    width:110px; aspect-ratio:2/3;
+    width:100%; aspect-ratio:2/3;
     border:1px solid var(--border);
     background:var(--panel-2) center/cover no-repeat;
     position:relative; overflow:hidden;
-    transition:width .28s ease, opacity .28s ease, border-color .2s ease, box-shadow .2s ease;
+    transition:border-color .2s ease, box-shadow .2s ease;
   }
   .poster-card img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .poster-card .mono{
@@ -113,26 +122,24 @@
     border-style:dashed; border-color:var(--text-mute);
     display:flex; align-items:center; justify-content:center;
   }
-  .node.today-empty .poster-card .q{ font-family:'Yeseva One', serif; font-size:28px; color:var(--text-mute); }
+  .node.today-empty .poster-card .q{ font-family:'Yeseva One', serif; font-size:26px; color:var(--text-mute); }
   .node .flame{ position:absolute; bottom:-2px; right:-2px; font-size:12px; z-index:2; }
 
   .node-title{
-    font-size:11px; color:var(--text-dim); text-align:center; max-width:110px;
+    font-size:11px; color:var(--text-dim); text-align:center; max-width:100%;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .node-date{ font-size:9.5px; color:var(--text-mute); }
 
-  .node.tier-0 .poster-card{ width:170px; }
-  .node.tier-0 .node-title{ color:var(--text); font-weight:600; max-width:170px; }
-  .node.tier-1 .poster-card{ width:125px; opacity:0.88; }
-  .node.tier-2 .poster-card{ width:96px; opacity:0.6; }
-  .node.tier-3 .poster-card{ width:76px; opacity:0.32; }
-  .node.tier-2 .node-title, .node.tier-3 .node-title,
-  .node.tier-2 .node-date, .node.tier-3 .node-date{ display:none; }
+  .node[data-offset="0"] .node-title{ color:var(--text); font-weight:600; font-size:12.5px; }
+  .node[data-offset="1"] .poster-card, .node[data-offset="-1"] .poster-card{ opacity:0.85; }
+  .node[data-offset="2"] .poster-card, .node[data-offset="-2"] .poster-card{ opacity:0.55; }
+  .node[data-offset="2"] .node-title, .node[data-offset="-2"] .node-title,
+  .node[data-offset="2"] .node-date, .node[data-offset="-2"] .node-date{ display:none; }
 
   /* ---------- Detail panel ---------- */
   .detail{
-    max-width:560px; margin:30px auto 0; text-align:center;
+    max-width:560px; margin:26px auto 0; text-align:center;
     background:var(--panel); border:1px solid var(--border); padding:26px 28px; position:relative;
   }
   .detail::before, .detail::after{ content:""; position:absolute; width:16px; height:16px; opacity:0.8; }
@@ -177,9 +184,9 @@
 
   footer{ text-align:center; margin-top:60px; color:var(--text-mute); font-size:12px; letter-spacing:0.05em; }
 
-  @media (max-width:520px){
-    .node.tier-0 .poster-card{ width:135px; }
-    .node.tier-1 .poster-card{ width:100px; }
+  @media (max-width:600px){
+    .track{ grid-template-columns: 58px 84px 116px 84px 58px; column-gap:6px; }
+    :root{ --slot-h:174px; }
   }
 </style>
 </head>
@@ -193,12 +200,12 @@
     <nav class="pagenav"><a href="archive.html">Весь архів переглянутого →</a></nav>
   </header>
 
-  <div class="carousel-wrap">
-    <div class="carousel-shell">
-      <button class="arrow" id="prevBtn" aria-label="Назад">‹</button>
-      <div class="carousel" id="carousel"></div>
-      <button class="arrow" id="nextBtn" aria-label="Вперед">›</button>
+  <div class="carousel-shell">
+    <button class="arrow" id="prevBtn" aria-label="Назад">‹</button>
+    <div class="stage" id="stage">
+      <div class="track" id="track"></div>
     </div>
+    <button class="arrow" id="nextBtn" aria-label="Вперед">›</button>
   </div>
 
   <div id="detailSection"></div>
@@ -209,9 +216,9 @@
 <script>
 let MERGED = [];
 let currentIndex = 0;
-let syncScheduled = false;
 
-const carouselEl = document.getElementById('carousel');
+const stage = document.getElementById('stage');
+const track = document.getElementById('track');
 const detailSection = document.getElementById('detailSection');
 const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
@@ -290,90 +297,83 @@ function renderDetail(m){
   `;
 }
 
-function renderCarousel(){
-  carouselEl.innerHTML = MERGED.map((m, i) => {
-    const status = statusOf(m);
-    let inner;
-    if(m.__placeholder){
-      inner = `<span class="q">?</span>`;
-    } else {
-      inner = m.poster
-        ? `<img src="${escapeHtml(m.poster)}" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;mono&quot;>${escapeHtml(m.title||'')}</span>'">`
-        : `<span class="mono">${escapeHtml(m.title||'')}</span>`;
-    }
-    const flame = status === 'today' ? '<span class="flame">🔥</span>' : '';
-    const title = m.__placeholder ? 'Сьогодні' : (m.title || '');
-    return `
-      <div class="node ${status}" data-index="${i}">
-        <div class="poster-card">${inner}${flame}</div>
-        <div class="node-title">${escapeHtml(title)}</div>
-        <div class="node-date">${fmtDateShort(m.watched)}</div>
-      </div>
-    `;
-  }).join('');
+function nodeHtml(idx, offset){
+  if(idx < 0 || idx >= MERGED.length){
+    return `<div class="node empty" style="grid-column:${offset+3}"></div>`;
+  }
+  const m = MERGED[idx];
+  const status = statusOf(m);
+  let inner;
+  if(m.__placeholder){
+    inner = `<span class="q">?</span>`;
+  } else {
+    inner = m.poster
+      ? `<img src="${escapeHtml(m.poster)}" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;mono&quot;>${escapeHtml(m.title||'')}</span>'">`
+      : `<span class="mono">${escapeHtml(m.title||'')}</span>`;
+  }
+  const flame = status === 'today' ? '<span class="flame">🔥</span>' : '';
+  const title = m.__placeholder ? 'Сьогодні' : (m.title || '');
+  return `
+    <div class="node ${status}" style="grid-column:${offset+3}" data-index="${idx}" data-offset="${offset}">
+      <div class="poster-slot"><div class="poster-card">${inner}${flame}</div></div>
+      <div class="node-title">${escapeHtml(title)}</div>
+      <div class="node-date">${fmtDateShort(m.watched)}</div>
+    </div>
+  `;
+}
 
-  carouselEl.querySelectorAll('.node').forEach(node => {
+function renderWindow(){
+  const offsets = [-2, -1, 0, 1, 2];
+  track.innerHTML = offsets.map(off => nodeHtml(currentIndex + off, off)).join('');
+
+  track.querySelectorAll('.node[data-index]').forEach(node => {
     node.addEventListener('click', () => {
-      goTo(parseInt(node.dataset.index, 10), true);
+      if(dragMoved) return;
+      setCurrent(parseInt(node.dataset.index, 10));
     });
   });
+
+  prevBtn.disabled = currentIndex <= 0;
+  nextBtn.disabled = currentIndex >= MERGED.length - 1;
 }
 
-function goTo(i, smooth){
-  if(i < 0 || i >= MERGED.length) return;
-  const node = carouselEl.querySelector(`.node[data-index="${i}"]`);
-  if(node){
-    node.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', inline: 'center', block: 'nearest' });
-  }
+function setCurrent(i){
+  if(i < 0 || i >= MERGED.length || i === currentIndex) return;
+  currentIndex = i;
+  renderWindow();
+  renderDetail(MERGED[currentIndex]);
 }
 
-function syncFromScroll(){
-  syncScheduled = false;
-  const nodes = Array.from(carouselEl.querySelectorAll('.node'));
-  if(nodes.length === 0) return;
-  const containerRect = carouselEl.getBoundingClientRect();
-  const centerX = containerRect.left + containerRect.width / 2;
-
-  const withDist = nodes.map(n => {
-    const r = n.getBoundingClientRect();
-    const nodeCenter = r.left + r.width / 2;
-    return { n, dist: Math.abs(nodeCenter - centerX), index: parseInt(n.dataset.index, 10) };
-  });
-  withDist.sort((a, b) => a.dist - b.dist);
-
-  withDist.forEach((item, rank) => {
-    let tier;
-    if(rank === 0) tier = 0;
-    else if(rank <= 2) tier = 1;
-    else if(rank <= 4) tier = 2;
-    else tier = 3;
-    item.n.classList.remove('tier-0', 'tier-1', 'tier-2', 'tier-3');
-    item.n.classList.add('tier-' + tier);
-  });
-
-  const newIndex = withDist[0].index;
-  if(newIndex !== currentIndex){
-    currentIndex = newIndex;
-    renderDetail(MERGED[currentIndex]);
-  }
-}
-
-function requestSync(){
-  if(syncScheduled) return;
-  syncScheduled = true;
-  requestAnimationFrame(syncFromScroll);
-}
-
-carouselEl.addEventListener('scroll', requestSync, { passive: true });
-window.addEventListener('resize', requestSync);
-
-prevBtn.addEventListener('click', () => goTo(currentIndex - 1, true));
-nextBtn.addEventListener('click', () => goTo(currentIndex + 1, true));
+prevBtn.addEventListener('click', () => setCurrent(currentIndex - 1));
+nextBtn.addEventListener('click', () => setCurrent(currentIndex + 1));
 
 document.addEventListener('keydown', (e) => {
-  if(e.key === 'ArrowLeft') goTo(currentIndex - 1, true);
-  if(e.key === 'ArrowRight') goTo(currentIndex + 1, true);
+  if(e.key === 'ArrowLeft') setCurrent(currentIndex - 1);
+  if(e.key === 'ArrowRight') setCurrent(currentIndex + 1);
 });
+
+/* swipe / drag support (touch + mouse via Pointer Events) */
+let dragStartX = null;
+let dragMoved = false;
+
+stage.addEventListener('pointerdown', (e) => {
+  dragStartX = e.clientX;
+  dragMoved = false;
+});
+stage.addEventListener('pointermove', (e) => {
+  if(dragStartX === null) return;
+  if(Math.abs(e.clientX - dragStartX) > 10) dragMoved = true;
+});
+stage.addEventListener('pointerup', (e) => {
+  if(dragStartX === null) return;
+  const dx = e.clientX - dragStartX;
+  if(Math.abs(dx) > 40){
+    dx < 0 ? setCurrent(currentIndex + 1) : setCurrent(currentIndex - 1);
+  }
+  dragStartX = null;
+  setTimeout(() => { dragMoved = false; }, 0);
+});
+stage.addEventListener('pointercancel', () => { dragStartX = null; });
 
 fetch('movies.json')
   .then(res => {
@@ -394,16 +394,12 @@ fetch('movies.json')
       return;
     }
 
-    renderCarousel();
     let startIndex = MERGED.findIndex(m => m.__placeholder || m.watched === t);
     if(startIndex === -1) startIndex = 0;
     currentIndex = startIndex;
-    renderDetail(MERGED[currentIndex]);
 
-    requestAnimationFrame(() => {
-      goTo(startIndex, false);
-      requestAnimationFrame(syncFromScroll);
-    });
+    renderWindow();
+    renderDetail(MERGED[currentIndex]);
   })
   .catch(err => {
     detailSection.innerHTML = `<div class="empty-state">Не вдалося завантажити список. Перевір, що файл <strong>movies.json</strong> лежить поруч з index.html.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
