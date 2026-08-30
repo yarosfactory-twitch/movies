@@ -74,7 +74,7 @@ function genresOf(m){
 }
 
 /* ---- Twitch-логін (Implicit OAuth, без бекенда) ---- */
-const TWITCH_CLIENT_ID = "ВСТАВ_СЮДИ_TWITCH_CLIENT_ID";
+const TWITCH_CLIENT_ID = "w30prbyn4afxt1d1j3n7d1lxttrpub";
 const TWITCH_OWNER_LOGIN = "yarosfactory";
 
 function twitchRedirectUri(){
