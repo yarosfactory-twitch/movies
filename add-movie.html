@@ -56,6 +56,12 @@
 
   .btn-row{ display:flex; gap:10px; margin-top:22px; }
   .btn-row .submit-btn{ margin-top:0; flex:1; }
+
+  .checkbox-row{
+    display:flex; align-items:center; gap:8px; margin-top:18px;
+    font-size:13px; color:var(--text-dim); cursor:pointer; user-select:none;
+  }
+  .checkbox-row input{ width:16px; height:16px; accent-color:var(--gold); cursor:pointer; }
   .tg-btn{
     flex:1; background:var(--panel-2); border:1px solid var(--gold); color:var(--gold-bright);
     padding:13px; font-size:14px; font-weight:600; letter-spacing:0.02em; text-transform:uppercase;
@@ -175,6 +181,11 @@
 
     <label for="fNote">Опис / нотатка</label>
     <textarea id="fNote" rows="3" placeholder="Коротко про фільм або враження від перегляду"></textarea>
+
+    <label class="checkbox-row">
+      <input type="checkbox" id="alsoTelegram" checked>
+      Також опублікувати в Telegram
+    </label>
 
     <div class="btn-row">
       <button type="submit" class="submit-btn" id="submitBtn">Додати фільм на сайт</button>
@@ -327,7 +338,7 @@ async function commitMovieWithRetry(apiUrl, headers, branch, movie, title, maxAt
   }
 }
 
-tgBtn.addEventListener('click', async () => {
+async function publishToTelegram({ title, yearVal, watched, genreVal, poster, orderedBy, episodes }){
   tgStatusBox.className = 'status';
 
   const tgToken = tgTokenInput.value.trim();
@@ -338,15 +349,6 @@ tgBtn.addEventListener('click', async () => {
     showTgStatus('err', 'Встав токен бота і Chat ID вище.');
     return;
   }
-
-  const title = document.getElementById('fTitle').value.trim();
-  const yearVal = document.getElementById('fYear').value.trim();
-  const watched = document.getElementById('fWatched').value;
-  const genreVal = document.getElementById('fGenre').value.trim();
-  const poster = document.getElementById('fPoster').value.trim();
-  const orderedBy = document.getElementById('fOrderedBy').value.trim();
-  const episodes = document.getElementById('fEpisodes').value.trim();
-
   if(!title || !watched){
     showTgStatus('err', 'Заповни принаймні назву й дату перегляду.');
     return;
@@ -393,6 +395,18 @@ tgBtn.addEventListener('click', async () => {
     tgBtn.disabled = false;
     tgBtn.textContent = 'Опублікувати в Telegram';
   }
+}
+
+tgBtn.addEventListener('click', () => {
+  publishToTelegram({
+    title: document.getElementById('fTitle').value.trim(),
+    yearVal: document.getElementById('fYear').value.trim(),
+    watched: document.getElementById('fWatched').value,
+    genreVal: document.getElementById('fGenre').value.trim(),
+    poster: document.getElementById('fPoster').value.trim(),
+    orderedBy: document.getElementById('fOrderedBy').value.trim(),
+    episodes: document.getElementById('fEpisodes').value.trim()
+  });
 });
 
 function escapeHtmlTg(str){
@@ -454,7 +468,13 @@ form.addEventListener('submit', async (e) => {
   try{
     const newContent = await commitMovieWithRetry(apiUrl, headers, branch, movie, title);
     showStatus('ok', `«${title}» додано! Сайт оновиться протягом хвилини — <a href="movie.html?id=${encodeURIComponent(slugify(title))}" target="_blank">перевірити сторінку фільму →</a>`);
+
+    if(document.getElementById('alsoTelegram').checked){
+      await publishToTelegram({ title, yearVal, watched, genreVal, poster, orderedBy, episodes });
+    }
+
     form.reset();
+    document.getElementById('alsoTelegram').checked = true;
     watchedInput.value = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
   }catch(err){
     showStatus('err', escapeHtml(err.message));
