@@ -74,7 +74,7 @@ function genresOf(m){
 }
 
 /* ---- Twitch-логін (Implicit OAuth, без бекенда) ---- */
-const TWITCH_CLIENT_ID = "w30prbyn4afxt1d1j3n7d1lxttrpub";
+const TWITCH_CLIENT_ID = "ВСТАВ_СЮДИ_TWITCH_CLIENT_ID";
 const TWITCH_OWNER_LOGIN = "yarosfactory";
 
 function twitchRedirectUri(){
@@ -157,13 +157,15 @@ function renderViewerRating(container, movie){
   const id = movieId(movie);
   const docRef = db.collection('reactions').doc(id);
   const myKey = 'myRating:' + id;
+  const confirmedKey = 'myRatingConfirmed:' + id;
   let myRating = parseInt(localStorage.getItem(myKey) || '0', 10) || 0;
+  let confirmed = myRating > 0 && localStorage.getItem(confirmedKey) === '1';
 
   container.innerHTML = `
     <div class="viewer-rating">
       <h3>Оцінка глядачів</h3>
       <div class="rating-avg" id="ratingAvg">Ще немає оцінок</div>
-      <div class="rate-hint">${myRating ? 'Твоя оцінка — можеш змінити:' : 'Постав свою оцінку:'}</div>
+      <div class="rate-hint" id="rateHint">${confirmed ? 'Твоя оцінка — можеш змінити:' : 'Постав свою оцінку:'}</div>
       <div class="rate-picker" id="ratePicker">
         ${Array.from({length:10}, (_, i) => i + 1).map(n => `<button type="button" data-val="${n}">${n}</button>`).join('')}
       </div>
@@ -171,19 +173,20 @@ function renderViewerRating(container, movie){
   `;
 
   const avgEl = document.getElementById('ratingAvg');
+  const hintEl = document.getElementById('rateHint');
   const picker = document.getElementById('ratePicker');
   const buttons = [...picker.querySelectorAll('button')];
 
   function paint(highlight){
     buttons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.val, 10) <= highlight));
   }
-  paint(myRating);
+  paint(confirmed ? myRating : 0);
 
   picker.addEventListener('mouseover', (e) => {
     const val = e.target.dataset.val;
     if(val) paint(parseInt(val, 10));
   });
-  picker.addEventListener('mouseleave', () => paint(myRating));
+  picker.addEventListener('mouseleave', () => paint(confirmed ? myRating : 0));
 
   docRef.onSnapshot(snap => {
     const data = snap.exists ? snap.data() : {};
@@ -197,23 +200,36 @@ function renderViewerRating(container, movie){
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
       const newVal = parseInt(btn.dataset.val, 10);
-      const oldVal = myRating;
-      if(newVal === oldVal) return;
-      myRating = newVal;
-      localStorage.setItem(myKey, String(newVal));
+      if(confirmed && newVal === myRating) return;
+      const wasConfirmed = confirmed;
+      const oldVal = wasConfirmed ? myRating : 0;
+
       paint(newVal);
-      container.querySelector('.rate-hint').textContent = 'Твоя оцінка — можеш змінити:';
+      hintEl.textContent = 'Зберігаю…';
+      btn.disabled = true;
 
       db.runTransaction(tx => {
         return tx.get(docRef).then(snap => {
           const data = snap.exists ? snap.data() : {};
           const sum = data.ratingSum || 0;
           const count = data.ratingCount || 0;
-          const newSum = oldVal ? (sum - oldVal + newVal) : (sum + newVal);
-          const newCount = oldVal ? count : count + 1;
+          const newSum = wasConfirmed ? (sum - oldVal + newVal) : (sum + newVal);
+          const newCount = wasConfirmed ? count : count + 1;
           tx.set(docRef, { ratingSum: newSum, ratingCount: newCount }, { merge: true });
         });
-      }).catch(err => console.warn('Не вдалося зберегти оцінку:', err.message));
+      }).then(() => {
+        myRating = newVal;
+        confirmed = true;
+        localStorage.setItem(myKey, String(newVal));
+        localStorage.setItem(confirmedKey, '1');
+        hintEl.textContent = 'Твоя оцінка — можеш змінити:';
+      }).catch(err => {
+        console.warn('Не вдалося зберегти оцінку:', err.message);
+        paint(wasConfirmed ? myRating : 0);
+        hintEl.textContent = 'Не вдалося зберегти — спробуй ще раз.';
+      }).finally(() => {
+        btn.disabled = false;
+      });
     });
   });
 }
