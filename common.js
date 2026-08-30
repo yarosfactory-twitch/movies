@@ -73,6 +73,72 @@ function genresOf(m){
   return Array.isArray(m.genre) ? m.genre.filter(Boolean) : [m.genre];
 }
 
+/* ---- Спільні GitHub-хелпери (add-movie.html, movie.html — редагування) ---- */
+const GH_LS_KEYS = { token:'am_gh_token', owner:'am_gh_owner', repo:'am_gh_repo', path:'am_gh_path', branch:'am_gh_branch' };
+
+function ghSettings(){
+  return {
+    token: localStorage.getItem(GH_LS_KEYS.token) || '',
+    owner: localStorage.getItem(GH_LS_KEYS.owner) || 'yarosfactory-twitch',
+    repo: localStorage.getItem(GH_LS_KEYS.repo) || 'movies',
+    path: localStorage.getItem(GH_LS_KEYS.path) || 'movies.json',
+    branch: localStorage.getItem(GH_LS_KEYS.branch) || 'main'
+  };
+}
+
+function decodeBase64Utf8(b64){
+  return decodeURIComponent(escape(atob(b64.replace(/\n/g, ''))));
+}
+function encodeBase64Utf8(str){
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+/* transformFn(arr) -> new/mutated array. Повертає новий вміст movies.json (рядок). */
+async function commitMoviesArray(transformFn, commitMessage, onRetry, maxAttempts = 3){
+  const { token, owner, repo, path, branch } = ghSettings();
+  if(!token) throw new Error('Немає GitHub-токена. Введи його на сторінці add-movie.html.');
+
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const headers = { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' };
+
+  for(let attempt = 1; attempt <= maxAttempts; attempt++){
+    const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, { headers });
+    if(!getRes.ok){
+      if(getRes.status === 401) throw new Error('Токен недійсний або прострочений.');
+      if(getRes.status === 404) throw new Error('Файл або репозиторій не знайдено.');
+      throw new Error(`Помилка читання файлу (${getRes.status}).`);
+    }
+    const getData = await getRes.json();
+    const currentContent = decodeBase64Utf8(getData.content);
+    let arr;
+    try{
+      arr = JSON.parse(currentContent);
+    }catch(e){
+      throw new Error('movies.json пошкоджений або не є валідним JSON.');
+    }
+    if(!Array.isArray(arr)) throw new Error('movies.json має бути масивом.');
+
+    arr = transformFn(arr);
+    const newContent = JSON.stringify(arr, null, 2) + '\n';
+
+    const putRes = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: commitMessage, content: encodeBase64Utf8(newContent), sha: getData.sha, branch })
+    });
+
+    if(putRes.ok) return newContent;
+
+    if(putRes.status === 409 && attempt < maxAttempts){
+      if(onRetry) onRetry(attempt + 1, maxAttempts);
+      continue;
+    }
+    if(putRes.status === 409) throw new Error('Файл змінюється надто часто паралельно — спробуй ще раз за кілька секунд.');
+    if(putRes.status === 403) throw new Error('Токену бракує прав на запис (Contents: Read and write).');
+    throw new Error(`Помилка запису (${putRes.status}).`);
+  }
+}
+
 /* ---- Twitch-логін (Implicit OAuth, без бекенда) ---- */
 const TWITCH_CLIENT_ID = "w30prbyn4afxt1d1j3n7d1lxttrpub";
 const TWITCH_OWNER_LOGIN = "yarosfactory";
