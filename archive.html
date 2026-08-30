@@ -93,12 +93,33 @@
 let ALL_MOVIES = [];
 let activeGenre = 'Усі';
 let sortMode = 'date-desc';
+let RATINGS_MAP = {};
 
 const grid = document.getElementById('grid');
 const statsEl = document.getElementById('stats');
 const chipsEl = document.getElementById('genreChips');
 const searchInput = document.getElementById('searchInput');
 const sortSelect = document.getElementById('sortSelect');
+
+function ratingOf(m){
+  return RATINGS_MAP[movieId(m)] || 0;
+}
+
+async function loadRatingsMap(movies){
+  if(!firebaseReady) return {};
+  const entries = await Promise.all(movies.map(async m => {
+    try{
+      const snap = await db.collection('reactions').doc(movieId(m)).get();
+      const data = snap.exists ? snap.data() : {};
+      const count = data.ratingCount || 0;
+      const avg = count > 0 ? data.ratingSum / count : 0;
+      return [movieId(m), avg];
+    }catch(e){
+      return [movieId(m), 0];
+    }
+  }));
+  return Object.fromEntries(entries);
+}
 
 function render(){
   const q = searchInput.value.trim().toLowerCase();
@@ -109,9 +130,9 @@ function render(){
   });
 
   if(sortMode === 'rating-desc'){
-    filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    filtered.sort((a, b) => ratingOf(b) - ratingOf(a));
   } else if(sortMode === 'rating-asc'){
-    filtered.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+    filtered.sort((a, b) => ratingOf(a) - ratingOf(b));
   } else if(sortMode === 'year-desc'){
     filtered.sort((a, b) => (b.year || 0) - (a.year || 0));
   } else if(sortMode === 'year-asc'){
@@ -241,6 +262,11 @@ fetch('movies.json')
     buildStats();
     buildChips();
     render();
+
+    loadRatingsMap(ALL_MOVIES).then(map => {
+      RATINGS_MAP = map;
+      if(sortMode === 'rating-desc' || sortMode === 'rating-asc') render();
+    });
   })
   .catch(err => {
     grid.innerHTML = `<div class="empty">Не вдалося завантажити список. Перевір, що файл <strong>movies.json</strong> лежить поруч з index.html.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
