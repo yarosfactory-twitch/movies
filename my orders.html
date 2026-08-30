@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мої замовлення — yarosfactory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap{ max-width:980px; padding:64px 24px 96px; }
+  header{ margin-bottom:48px; }
+  h1{ font-size:clamp(28px, 4.5vw, 44px); margin-bottom:14px; }
+  .sub{ font-size:14.5px; max-width:520px; }
+  .grid{ margin-top:36px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">yarosfactory · ярос</div>
+    <h1>Мої замовлення</h1>
+    <p class="sub">Фільми, які ти замовив(ла) на стрімі.</p>
+    <nav class="pagenav">
+      <a href="index.html">← Сьогодні дивимось</a>
+      <a href="archive.html">Весь архів →</a>
+    </nav>
+    <div id="authWidget"></div>
+  </header>
+
+  <div class="grid" id="grid"><div class="empty">Завантаження…</div></div>
+
+  <footer>оновлюється вручну · movies.json</footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="common.js"></script>
+<script>
+const grid = document.getElementById('grid');
+
+function renderCards(movies){
+  if(movies.length === 0){
+    grid.innerHTML = '<div class="empty">Тут поки нічого немає — ще не замовляв(ла) фільмів.</div>';
+    return;
+  }
+  grid.innerHTML = movies.map((m, i) => {
+    const posterInner = m.poster
+      ? `<img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(m.title)}</div>'">`
+      : `<div class="no-poster">${escapeHtml(m.title)}</div>`;
+    const genreLabel = genresOf(m).join(' · ');
+    const status = statusOf(m);
+    const dateLabel = status === 'planned' ? `заплановано на ${fmtDateLong(m.watched)}` : `переглянуто ${fmtDateLong(m.watched)}`;
+
+    return `
+    <div class="card" style="animation-delay:${Math.min(i*35, 350)}ms" data-id="${escapeHtml(movieId(m))}">
+      <div class="poster">
+        ${posterInner}
+        <div class="corner-tr"></div><div class="corner-br"></div>
+        ${genreLabel ? `<div class="badge-genre" style="left:8px">${escapeHtml(genreLabel)}</div>` : ''}
+        <div class="poster-overlay">
+          <div class="date">${dateLabel}</div>
+        </div>
+      </div>
+      <h2>${escapeHtml(m.title)}</h2>
+      <div class="meta">${m.year || ''}</div>
+    </div>
+  `;
+  }).join('');
+
+  grid.querySelectorAll('.card[data-id]').forEach(card => {
+    card.addEventListener('click', () => {
+      window.location.href = 'movie.html?id=' + encodeURIComponent(card.dataset.id);
+    });
+  });
+}
+
+async function init(){
+  const authWidget = document.getElementById('authWidget');
+  await initAuth(authWidget);
+
+  const user = getTwitchUser();
+  if(!user){
+    grid.innerHTML = `<div class="empty">Спочатку увійди через Twitch — кнопка вгорі сторінки.</div>`;
+    return;
+  }
+
+  try{
+    const res = await fetch('movies.json');
+    if(!res.ok) throw new Error('Не вдалося завантажити movies.json');
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : [];
+    const mine = list.filter(m => (m.orderedBy || '').toLowerCase() === user.login.toLowerCase())
+      .sort((a, b) => new Date(b.watched) - new Date(a.watched));
+    renderCards(mine);
+  }catch(err){
+    grid.innerHTML = `<div class="empty">Не вдалося завантажити список.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>
