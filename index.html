@@ -107,6 +107,7 @@
     <h1>Сьогодні дивимось</h1>
     <p class="sub">Гортай стрічку свайпом чи стрілками, тицяй на картку — відкриється сторінка фільму.</p>
     <nav class="pagenav"><a href="archive.html">Весь архів переглянутого →</a></nav>
+    <div id="authWidget"></div>
   </header>
 
   <div class="carousel-shell">
@@ -260,6 +261,8 @@ stage.addEventListener('pointerup', (e) => {
   setTimeout(() => { dragMoved = false; }, 0);
 });
 stage.addEventListener('pointercancel', () => { dragStartX = null; });
+
+initAuth(document.getElementById('authWidget'));
 
 fetch('movies.json')
   .then(res => {
