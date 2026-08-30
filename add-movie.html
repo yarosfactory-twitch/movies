@@ -6,7 +6,7 @@
 <title>Додати фільм — адмінка</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
   .wrap{ max-width:640px; padding:52px 20px 90px; }
@@ -23,7 +23,7 @@
   .panel::after{ bottom:8px; right:8px; border-bottom:1px solid var(--gold); border-right:1px solid var(--gold); }
 
   .panel h2{
-    font-family:'Yeseva One', serif; font-weight:400; font-size:16px;
+    font-family:'Playfair Display', serif; font-weight:400; font-size:16px;
     color:var(--gold-bright); margin:0 0 16px;
   }
 
@@ -168,6 +168,10 @@
     <label for="fOrderedBy">Замовник (Twitch-логін)</label>
     <input type="text" id="fOrderedBy" placeholder="nickname" list="orderedByList" autocomplete="off">
     <datalist id="orderedByList"></datalist>
+
+    <label for="fEpisodes">Серії (для серіалів, необов'язково)</label>
+    <input type="text" id="fEpisodes" placeholder="Сезон 2, серії 1-4">
+    <p class="hint">Якщо дивишся серіал блоками — онови назву так, щоб вона відрізнялась щоразу (наприклад додай "(1-4 серія)" в кінець), інакше нова сторінка перезапише коментарі й оцінки попередньої.</p>
 
     <label for="fNote">Опис / нотатка</label>
     <textarea id="fNote" rows="3" placeholder="Коротко про фільм або враження від перегляду"></textarea>
@@ -341,6 +345,7 @@ tgBtn.addEventListener('click', async () => {
   const genreVal = document.getElementById('fGenre').value.trim();
   const poster = document.getElementById('fPoster').value.trim();
   const orderedBy = document.getElementById('fOrderedBy').value.trim();
+  const episodes = document.getElementById('fEpisodes').value.trim();
 
   if(!title || !watched){
     showTgStatus('err', 'Заповни принаймні назву й дату перегляду.');
@@ -352,6 +357,7 @@ tgBtn.addEventListener('click', async () => {
   const lines = [`Назва: ${title}`];
   if(yearVal) lines.push(`Рік: ${yearVal}`);
   if(genres) lines.push(`Жанр: ${genres}`);
+  if(episodes) lines.push(`Серії: ${episodes}`);
   lines.push(`Дата перегляду: ${fmtDateUA(watched)}`);
   if(orderedBy) lines.push(`Замовник: ${orderedBy}`);
   const caption = lines.join('\n');
@@ -416,6 +422,7 @@ form.addEventListener('submit', async (e) => {
   const genreVal = document.getElementById('fGenre').value.trim();
   const poster = document.getElementById('fPoster').value.trim();
   const orderedBy = document.getElementById('fOrderedBy').value.trim();
+  const episodes = document.getElementById('fEpisodes').value.trim();
   const note = document.getElementById('fNote').value.trim();
 
   if(!title || !watched){
@@ -430,6 +437,7 @@ form.addEventListener('submit', async (e) => {
     movie.genre = genres.length > 1 ? genres : genres[0];
   }
   movie.watched = watched;
+  if(episodes) movie.episodes = episodes;
   if(note) movie.note = note;
   if(poster) movie.poster = poster;
   if(orderedBy) movie.orderedBy = orderedBy;
