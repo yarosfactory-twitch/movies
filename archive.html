@@ -232,6 +232,12 @@ fetch('movies.json')
     ALL_MOVIES = Array.isArray(data)
       ? data.filter(m => new Date(m.watched) <= today).slice().sort((a,b)=> new Date(b.watched) - new Date(a.watched))
       : [];
+
+    const urlGenre = new URLSearchParams(window.location.search).get('genre');
+    if(urlGenre && ALL_MOVIES.some(m => genresOf(m).includes(urlGenre))){
+      activeGenre = urlGenre;
+    }
+
     buildStats();
     buildChips();
     render();
