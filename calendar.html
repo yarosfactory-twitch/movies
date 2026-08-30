@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Календар — yarosfactory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap{ max-width:920px; padding:56px 20px 90px; }
+  header{ margin-bottom:32px; }
+  h1{ font-size:clamp(28px, 4.5vw, 40px); margin-bottom:10px; }
+
+  .legend{
+    display:flex; gap:20px; justify-content:center; flex-wrap:wrap;
+    margin:24px 0 8px; font-size:12px; color:var(--text-mute);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .dot.busy{ background:var(--gold); }
+  .dot.free{ background:var(--teal); }
+  .dot.today{ background:var(--text); border:1px solid var(--gold-bright); }
+
+  .cal-nav{
+    display:flex; align-items:center; justify-content:center; gap:18px;
+    margin-top:36px; margin-bottom:18px;
+  }
+  .cal-nav button{
+    width:34px; height:34px; border:1px solid var(--border); background:var(--panel);
+    color:var(--text-dim); cursor:pointer; font-size:16px; transition:border-color .15s, color .15s;
+  }
+  .cal-nav button:hover{ border-color:var(--gold); color:var(--gold-bright); }
+  .cal-nav h2{
+    font-family:'Spectral', serif; font-weight:600; font-size:20px; color:var(--gold-bright);
+    margin:0; min-width:180px; text-align:center; text-transform:capitalize;
+  }
+
+  .cal-grid{
+    display:grid; grid-template-columns:repeat(7, 1fr);
+    gap:6px;
+  }
+  .cal-dow{
+    text-align:center; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--text-mute); padding-bottom:6px;
+  }
+  .cal-day{
+    position:relative; aspect-ratio:1/1; border:1px solid var(--border); background:var(--panel);
+    padding:6px; display:flex; flex-direction:column; gap:3px; overflow:hidden;
+    transition:border-color .15s;
+  }
+  .cal-day.outside{ opacity:0.25; }
+  .cal-day.today{ border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright); }
+  .cal-day.has-movie{ cursor:pointer; }
+  .cal-day.has-movie:hover{ border-color:var(--gold); }
+  .cal-day.free-future{ border-style:dashed; border-color:rgba(83,116,104,0.5); }
+
+  .cal-num{ font-size:11.5px; color:var(--text-mute); }
+  .cal-day.today .cal-num{ color:var(--gold-bright); font-weight:700; }
+
+  .cal-movie{
+    margin-top:auto; font-size:9.5px; line-height:1.25; color:var(--text-dim);
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .cal-day.has-movie .cal-movie{ color:var(--text); }
+  .cal-day.today.has-movie .cal-movie{ font-weight:600; }
+
+  .cal-free-label{
+    margin-top:auto; font-size:9px; letter-spacing:0.04em; text-transform:uppercase; color:var(--teal);
+  }
+
+  @media (max-width:640px){
+    .cal-movie{ display:none; }
+    .cal-day{ padding:4px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">yarosfactory · ярос</div>
+    <h1>Календар переглядів</h1>
+    <p class="sub">Жовті дні — вже заплановано чи переглянуто. Пунктирні — вільні дати, можна замовити на стрімі.</p>
+    <nav class="pagenav">
+      <a href="index.html">← Сьогодні дивимось</a>
+      <a href="archive.html">Весь архів →</a>
+    </nav>
+    <div id="authWidget"></div>
+  </header>
+
+  <div class="legend">
+    <span><span class="dot busy"></span>Заплановано / переглянуто</span>
+    <span><span class="dot free"></span>Вільна дата</span>
+    <span><span class="dot today"></span>Сьогодні</span>
+  </div>
+
+  <div class="cal-nav">
+    <button type="button" id="prevBtn" aria-label="Попередній місяць">‹</button>
+    <h2 id="monthLabel"></h2>
+    <button type="button" id="nextBtn" aria-label="Наступний місяць">›</button>
+  </div>
+
+  <div class="cal-grid" id="calGrid"></div>
+
+  <footer>оновлюється вручну · movies.json</footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="common.js"></script>
+<script>
+const DOW = ['Пн','Вт','Ср','Чт','Пт','Сб','Нд'];
+const MONTHS = ['січня','лютого','березня','квітня','травня','червня','липня','серпня','вересня','жовтня','листопада','грудня'];
+
+const calGrid = document.getElementById('calGrid');
+const monthLabel = document.getElementById('monthLabel');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+let MOVIES_BY_DATE = {};
+let viewYear, viewMonth; // viewMonth 0-11
+
+function todayStrLocal(){
+  const t = new Date();
+  return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+}
+
+function render(){
+  const todayStr = todayStrLocal();
+  monthLabel.textContent = `${MONTHS[viewMonth]} ${viewYear}`;
+
+  calGrid.innerHTML = DOW.map(d => `<div class="cal-dow">${d}</div>`).join('');
+
+  const firstOfMonth = new Date(viewYear, viewMonth, 1);
+  // Monday-based offset
+  let startOffset = firstOfMonth.getDay() - 1;
+  if(startOffset < 0) startOffset = 6;
+
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+
+  const cells = [];
+
+  for(let i = startOffset; i > 0; i--){
+    cells.push({ day: daysInPrevMonth - i + 1, outside: true });
+  }
+  for(let d = 1; d <= daysInMonth; d++){
+    cells.push({ day: d, outside: false });
+  }
+  while(cells.length % 7 !== 0){
+    cells.push({ day: cells.length - (startOffset + daysInMonth) + 1, outside: true });
+  }
+
+  calGrid.insertAdjacentHTML('beforeend', cells.map(c => {
+    const cellDate = new Date(viewYear, viewMonth, c.day);
+    // recompute correct outside date value (handles prev/next month numbers cleanly)
+    const dateStr = c.outside
+      ? null
+      : viewYear + '-' + String(viewMonth+1).padStart(2,'0') + '-' + String(c.day).padStart(2,'0');
+
+    if(c.outside){
+      return `<div class="cal-day outside"><div class="cal-num">${c.day}</div></div>`;
+    }
+
+    const isToday = dateStr === todayStr;
+    const isFuture = dateStr > todayStr;
+    const movies = MOVIES_BY_DATE[dateStr] || [];
+    const hasMovie = movies.length > 0;
+
+    let cls = 'cal-day';
+    if(isToday) cls += ' today';
+    if(hasMovie) cls += ' has-movie';
+    if(!hasMovie && isFuture) cls += ' free-future';
+
+    const titleLine = hasMovie
+      ? `<div class="cal-movie">${movies.map(m => escapeHtml(m.title)).join(', ')}</div>`
+      : (isFuture ? `<div class="cal-free-label">Вільно</div>` : '');
+
+    const clickAttr = hasMovie && movies.length === 1
+      ? ` data-id="${escapeHtml(movieId(movies[0]))}"`
+      : '';
+
+    return `<div class="${cls}"${clickAttr}><div class="cal-num">${c.day}</div>${titleLine}</div>`;
+  }).join(''));
+
+  calGrid.querySelectorAll('.cal-day[data-id]').forEach(el => {
+    el.addEventListener('click', () => {
+      window.location.href = 'movie.html?id=' + encodeURIComponent(el.dataset.id);
+    });
+  });
+}
+
+prevBtn.addEventListener('click', () => {
+  viewMonth--;
+  if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+  render();
+});
+nextBtn.addEventListener('click', () => {
+  viewMonth++;
+  if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+  render();
+});
+
+const now = new Date();
+viewYear = now.getFullYear();
+viewMonth = now.getMonth();
+
+fetch('movies.json')
+  .then(res => {
+    if(!res.ok) throw new Error('Не вдалося завантажити movies.json');
+    return res.json();
+  })
+  .then(data => {
+    const list = Array.isArray(data) ? data : [];
+    MOVIES_BY_DATE = {};
+    list.forEach(m => {
+      if(!m.watched) return;
+      (MOVIES_BY_DATE[m.watched] = MOVIES_BY_DATE[m.watched] || []).push(m);
+    });
+    render();
+  })
+  .catch(err => {
+    calGrid.innerHTML = `<div class="empty">Не вдалося завантажити список.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
+  });
+
+initAuth(document.getElementById('authWidget'));
+</script>
+
+</body>
+</html>
