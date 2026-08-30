@@ -73,6 +73,81 @@ function genresOf(m){
   return Array.isArray(m.genre) ? m.genre.filter(Boolean) : [m.genre];
 }
 
+/* ---- Twitch-логін (Implicit OAuth, без бекенда) ---- */
+const TWITCH_CLIENT_ID = "ВСТАВ_СЮДИ_TWITCH_CLIENT_ID";
+const TWITCH_OWNER_LOGIN = "yarosfactory";
+
+function twitchRedirectUri(){
+  const path = window.location.pathname;
+  const base = path.slice(0, path.lastIndexOf('/') + 1);
+  return window.location.origin + base + 'index.html';
+}
+function twitchLoginUrl(){
+  const params = new URLSearchParams({
+    client_id: TWITCH_CLIENT_ID,
+    redirect_uri: twitchRedirectUri(),
+    response_type: 'token',
+    scope: ''
+  });
+  return `https://id.twitch.tv/oauth2/authorize?${params.toString()}`;
+}
+function getTwitchUser(){
+  try{ return JSON.parse(localStorage.getItem('twitch_user') || 'null'); }catch(e){ return null; }
+}
+function twitchLogout(){
+  localStorage.removeItem('twitch_user');
+  window.location.reload();
+}
+
+async function handleTwitchCallback(){
+  if(!window.location.hash.includes('access_token')) return;
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const accessToken = params.get('access_token');
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+  if(!accessToken) return;
+  try{
+    const res = await fetch('https://api.twitch.tv/helix/users', {
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Client-Id': TWITCH_CLIENT_ID }
+    });
+    const data = await res.json();
+    const user = data.data && data.data[0];
+    if(user){
+      localStorage.setItem('twitch_user', JSON.stringify({
+        login: user.login, display_name: user.display_name, id: user.id
+      }));
+    }
+  }catch(e){
+    console.warn('Помилка Twitch-авторизації:', e.message);
+  }
+}
+
+function renderAuthWidget(container){
+  const user = getTwitchUser();
+  if(user){
+    const ownerLink = user.login === TWITCH_OWNER_LOGIN ? `<a href="add-movie.html">➕ Додати фільм</a>` : '';
+    container.innerHTML = `
+      <div class="auth-widget">
+        <span class="auth-name">👋 ${escapeHtml(user.display_name)}</span>
+        <a href="my-orders.html">Мої замовлення</a>
+        ${ownerLink}
+        <button type="button" class="auth-logout" onclick="twitchLogout()">Вийти</button>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="auth-widget">
+        <a class="auth-login" href="${twitchLoginUrl()}">Увійти через Twitch</a>
+      </div>
+    `;
+  }
+}
+
+async function initAuth(container){
+  if(!container) return;
+  await handleTwitchCallback();
+  renderAuthWidget(container);
+}
+
 /* ---- Оцінка глядачів (1-10): container — DOM-елемент, movie — об'єкт фільму ---- */
 function renderViewerRating(container, movie){
   if(!firebaseReady){
@@ -191,12 +266,15 @@ function renderComments(container, movie){
   }
   const id = movieId(movie);
   const colRef = db.collection('reactions').doc(id).collection('comments');
+  const twitchUser = getTwitchUser();
 
   container.innerHTML = `
     <div class="comments">
       <h3>Коментарі глядачів</h3>
       <form class="comment-form" id="commentForm">
-        <input type="text" id="commentName" placeholder="Ім'я (необов'язково)" maxlength="40">
+        ${twitchUser
+          ? `<div class="comment-as">Коментуєш як <strong>${escapeHtml(twitchUser.display_name)}</strong></div>`
+          : `<input type="text" id="commentName" placeholder="Ім'я (необов'язково)" maxlength="40">`}
         <textarea id="commentText" placeholder="Що думаєш про цей фільм?" rows="3" maxlength="400" required></textarea>
         <div class="comment-hint">До 400 символів. Коментарі видно всім глядачам сайту.</div>
         <button type="submit">Надіслати</button>
@@ -216,8 +294,9 @@ function renderComments(container, movie){
     const text = textInput.value.trim();
     if(!text) return;
     submitBtn.disabled = true;
+    const name = twitchUser ? twitchUser.display_name : (nameInput ? nameInput.value.trim().slice(0, 40) : '');
     colRef.add({
-      name: nameInput.value.trim().slice(0, 40) || 'Глядач',
+      name: name || 'Глядач',
       text: text.slice(0, 400),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
