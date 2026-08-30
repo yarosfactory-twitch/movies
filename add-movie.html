@@ -54,6 +54,20 @@
   .submit-btn:hover{ background:var(--gold-bright); }
   .submit-btn:disabled{ opacity:0.5; cursor:default; }
 
+  .btn-row{ display:flex; gap:10px; margin-top:22px; }
+  .btn-row .submit-btn{ margin-top:0; flex:1; }
+  .tg-btn{
+    flex:1; background:var(--panel-2); border:1px solid var(--gold); color:var(--gold-bright);
+    padding:13px; font-size:14px; font-weight:600; letter-spacing:0.02em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s, color .15s;
+  }
+  .tg-btn:hover{ background:var(--gold); color:#1b1610; }
+  .tg-btn:disabled{ opacity:0.5; cursor:default; }
+
+  @media (max-width:480px){
+    .btn-row{ flex-direction:column; }
+  }
+
   .status{ margin-top:16px; padding:14px 16px; font-size:13.5px; line-height:1.6; display:none; }
   .status.show{ display:block; }
   .status.ok{ border:1px solid rgba(83,116,104,0.5); color:var(--teal); background:rgba(83,116,104,0.08); }
@@ -108,6 +122,26 @@
     </details>
   </div>
 
+  <div class="panel">
+    <h2>Telegram (Афіша)</h2>
+    <label for="tgToken">Токен бота</label>
+    <div class="token-row">
+      <div><input type="password" id="tgToken" placeholder="8861275033:AAG..."></div>
+      <button type="button" id="toggleTgToken">Показати</button>
+    </div>
+    <div class="row">
+      <div>
+        <label for="tgChat">Chat ID</label>
+        <input type="text" id="tgChat" value="-1003719094633">
+      </div>
+      <div>
+        <label for="tgThread">Thread ID (тема "Афіша")</label>
+        <input type="text" id="tgThread" value="2583">
+      </div>
+    </div>
+    <p class="hint">Зберігається так само, тільки в цьому браузері.</p>
+  </div>
+
   <form class="panel" id="movieForm">
     <h2>Фільм</h2>
     <label for="fTitle">Назва *</label>
@@ -138,14 +172,19 @@
     <label for="fNote">Опис / нотатка</label>
     <textarea id="fNote" rows="3" placeholder="Коротко про фільм або враження від перегляду"></textarea>
 
-    <button type="submit" class="submit-btn" id="submitBtn">Додати фільм на сайт</button>
+    <div class="btn-row">
+      <button type="submit" class="submit-btn" id="submitBtn">Додати фільм на сайт</button>
+      <button type="button" class="tg-btn" id="tgBtn">Опублікувати в Telegram</button>
+    </div>
 
     <div class="status" id="statusBox"></div>
+    <div class="status" id="tgStatusBox"></div>
   </form>
 </div>
 
 <script>
 const LS_KEYS = { token:'am_gh_token', owner:'am_gh_owner', repo:'am_gh_repo', path:'am_gh_path', branch:'am_gh_branch' };
+const TG_LS_KEYS = { token:'am_tg_token', chat:'am_tg_chat', thread:'am_tg_thread' };
 
 const tokenInput = document.getElementById('ghToken');
 const ownerInput = document.getElementById('ghOwner');
@@ -158,12 +197,34 @@ const submitBtn = document.getElementById('submitBtn');
 const statusBox = document.getElementById('statusBox');
 const watchedInput = document.getElementById('fWatched');
 
+const tgTokenInput = document.getElementById('tgToken');
+const tgChatInput = document.getElementById('tgChat');
+const tgThreadInput = document.getElementById('tgThread');
+const toggleTgBtn = document.getElementById('toggleTgToken');
+const tgBtn = document.getElementById('tgBtn');
+const tgStatusBox = document.getElementById('tgStatusBox');
+
 // restore saved settings
 tokenInput.value = localStorage.getItem(LS_KEYS.token) || '';
 ownerInput.value = localStorage.getItem(LS_KEYS.owner) || ownerInput.value;
 repoInput.value = localStorage.getItem(LS_KEYS.repo) || repoInput.value;
 pathInput.value = localStorage.getItem(LS_KEYS.path) || pathInput.value;
 branchInput.value = localStorage.getItem(LS_KEYS.branch) || branchInput.value;
+
+tgTokenInput.value = localStorage.getItem(TG_LS_KEYS.token) || '';
+tgChatInput.value = localStorage.getItem(TG_LS_KEYS.chat) || tgChatInput.value;
+tgThreadInput.value = localStorage.getItem(TG_LS_KEYS.thread) || tgThreadInput.value;
+
+[tgTokenInput, tgChatInput, tgThreadInput].forEach((el, i) => {
+  const key = [TG_LS_KEYS.token, TG_LS_KEYS.chat, TG_LS_KEYS.thread][i];
+  el.addEventListener('change', () => localStorage.setItem(key, el.value.trim()));
+});
+
+toggleTgBtn.addEventListener('click', () => {
+  const isPw = tgTokenInput.type === 'password';
+  tgTokenInput.type = isPw ? 'text' : 'password';
+  toggleTgBtn.textContent = isPw ? 'Сховати' : 'Показати';
+});
 
 // default watched date = today
 const today = new Date();
@@ -195,6 +256,10 @@ function showStatus(kind, html){
   statusBox.className = 'status show ' + kind;
   statusBox.innerHTML = html;
 }
+function showTgStatus(kind, html){
+  tgStatusBox.className = 'status show ' + kind;
+  tgStatusBox.innerHTML = html;
+}
 
 function decodeBase64Utf8(b64){
   return decodeURIComponent(escape(atob(b64.replace(/\n/g, ''))));
@@ -205,6 +270,82 @@ function encodeBase64Utf8(str){
 function slugify(str){
   return (str || 'movie').toString().trim().toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '') || 'movie';
+}
+function fmtDateUA(isoDate){
+  const [y, m, d] = isoDate.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+tgBtn.addEventListener('click', async () => {
+  tgStatusBox.className = 'status';
+
+  const tgToken = tgTokenInput.value.trim();
+  const chatId = tgChatInput.value.trim();
+  const threadId = tgThreadInput.value.trim();
+
+  if(!tgToken || !chatId){
+    showTgStatus('err', 'Встав токен бота і Chat ID вище.');
+    return;
+  }
+
+  const title = document.getElementById('fTitle').value.trim();
+  const yearVal = document.getElementById('fYear').value.trim();
+  const watched = document.getElementById('fWatched').value;
+  const genreVal = document.getElementById('fGenre').value.trim();
+  const poster = document.getElementById('fPoster').value.trim();
+  const orderedBy = document.getElementById('fOrderedBy').value.trim();
+
+  if(!title || !watched){
+    showTgStatus('err', 'Заповни принаймні назву й дату перегляду.');
+    return;
+  }
+
+  const genres = genreVal ? genreVal.split(',').map(g => g.trim()).filter(Boolean).join(', ') : '';
+
+  const lines = [`Назва: ${title}`];
+  if(yearVal) lines.push(`Рік: ${yearVal}`);
+  if(genres) lines.push(`Жанр: ${genres}`);
+  lines.push(`Дата перегляду: ${fmtDateUA(watched)}`);
+  if(orderedBy) lines.push(`Замовник: ${orderedBy}`);
+  const caption = lines.join('\n');
+
+  tgBtn.disabled = true;
+  tgBtn.textContent = 'Публікую…';
+
+  try{
+    const base = `https://api.telegram.org/bot${tgToken}`;
+    const method = poster ? 'sendPhoto' : 'sendMessage';
+    const body = { chat_id: chatId };
+    if(threadId) body.message_thread_id = threadId;
+    if(poster){
+      body.photo = poster;
+      body.caption = caption;
+    } else {
+      body.text = caption;
+    }
+
+    const res = await fetch(`${base}/${method}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if(!data.ok){
+      throw new Error(data.description || `Помилка Telegram (${res.status}).`);
+    }
+    showTgStatus('ok', `Опубліковано в Telegram (тема "Афіша")!`);
+  }catch(err){
+    showTgStatus('err', escapeHtmlTg(err.message));
+  }finally{
+    tgBtn.disabled = false;
+    tgBtn.textContent = 'Опублікувати в Telegram';
+  }
+});
+
+function escapeHtmlTg(str){
+  const d = document.createElement('div');
+  d.textContent = str ?? '';
+  return d.innerHTML;
 }
 
 form.addEventListener('submit', async (e) => {
