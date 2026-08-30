@@ -132,7 +132,8 @@
     <input type="text" id="fPoster" placeholder="https://image.tmdb.org/t/p/w500/...">
 
     <label for="fOrderedBy">Замовник (Twitch-логін)</label>
-    <input type="text" id="fOrderedBy" placeholder="nickname">
+    <input type="text" id="fOrderedBy" placeholder="nickname" list="orderedByList" autocomplete="off">
+    <datalist id="orderedByList"></datalist>
 
     <label for="fNote">Опис / нотатка</label>
     <textarea id="fNote" rows="3" placeholder="Коротко про фільм або враження від перегляду"></textarea>
@@ -178,6 +179,17 @@ toggleBtn.addEventListener('click', () => {
   tokenInput.type = isPw ? 'text' : 'password';
   toggleBtn.textContent = isPw ? 'Сховати' : 'Показати';
 });
+
+// populate "orderedBy" suggestions from existing movies.json
+fetch('movies.json')
+  .then(res => res.ok ? res.json() : [])
+  .then(data => {
+    const list = Array.isArray(data) ? data : [];
+    const names = [...new Set(list.map(m => m.orderedBy).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const datalist = document.getElementById('orderedByList');
+    datalist.innerHTML = names.map(n => `<option value="${n.replace(/"/g, '&quot;')}">`).join('');
+  })
+  .catch(() => {});
 
 function showStatus(kind, html){
   statusBox.className = 'status show ' + kind;
