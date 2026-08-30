@@ -57,6 +57,42 @@
   .section-block .reactions{ background:var(--panel); border:1px solid var(--border); padding:20px 24px; justify-content:flex-start; }
   .section-block .comments{ background:var(--panel); border:1px solid var(--border); padding:24px 26px; margin-top:18px; }
 
+  .edit-toggle{
+    display:inline-block; margin-bottom:14px; background:none; border:1px solid var(--border);
+    color:var(--text-mute); font-size:11.5px; letter-spacing:0.05em; text-transform:uppercase;
+    padding:7px 14px; cursor:pointer; font-family:inherit; transition:border-color .15s, color .15s;
+  }
+  .edit-toggle:hover{ border-color:var(--gold); color:var(--gold-bright); }
+
+  .edit-panel{
+    background:var(--panel); border:1px solid var(--border); padding:24px; margin-top:20px; display:none;
+  }
+  .edit-panel.open{ display:block; }
+  .edit-panel h3{ font-family:'Spectral', serif; font-weight:600; font-size:16px; color:var(--gold-bright); margin:0 0 16px; }
+  .edit-panel label{ display:block; font-size:11px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-mute); margin:12px 0 5px; }
+  .edit-panel label:first-of-type{ margin-top:0; }
+  .edit-panel input, .edit-panel textarea{
+    width:100%; background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    padding:9px 11px; font-family:'Golos Text', sans-serif; font-size:13.5px; outline:none;
+    transition:border-color .2s; resize:vertical;
+  }
+  .edit-panel input:focus, .edit-panel textarea:focus{ border-color:var(--gold); }
+  .edit-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .edit-hint{ font-size:10.5px; color:var(--text-mute); margin-top:4px; }
+  .edit-save{
+    margin-top:18px; background:var(--gold); border:1px solid var(--gold); color:#1b1610;
+    padding:11px 22px; font-size:13px; font-weight:600; letter-spacing:0.03em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s;
+  }
+  .edit-save:hover{ background:var(--gold-bright); }
+  .edit-save:disabled{ opacity:0.5; cursor:default; }
+  .edit-status{ margin-top:14px; padding:12px 14px; font-size:13px; line-height:1.5; display:none; }
+  .edit-status.show{ display:block; }
+  .edit-status.ok{ border:1px solid rgba(83,116,104,0.5); color:var(--teal); background:rgba(83,116,104,0.08); }
+  .edit-status.err{ border:1px solid #8a4a3d; color:#c98a7a; background:rgba(138,74,61,0.08); }
+  .edit-token-note{ font-size:11px; color:var(--text-mute); margin-top:14px; }
+  .edit-token-note a{ color:var(--gold-bright); }
+
   @media (max-width:640px){
     .movie-hero{ grid-template-columns:1fr; }
     .movie-poster{ max-width:220px; margin:0 auto; }
@@ -82,6 +118,7 @@
   <div class="back-row"><button onclick="history.length > 1 ? history.back() : (window.location.href='index.html')">← Повернутися назад</button></div>
 
   <div id="movieSection"><div class="empty-state">Завантаження…</div></div>
+  <div id="editPanel"></div>
   <div id="ratingBlock"></div>
   <div id="reactionsBlock"></div>
   <div id="commentsBlock"></div>
@@ -94,13 +131,18 @@
 <script src="common.js"></script>
 <script>
 const movieSection = document.getElementById('movieSection');
+const editPanel = document.getElementById('editPanel');
 const reactionsBlock = document.getElementById('reactionsBlock');
 const commentsBlock = document.getElementById('commentsBlock');
 
 const params = new URLSearchParams(window.location.search);
 const wantedId = params.get('id');
 
+let currentMovie = null;
+let isOwner = false;
+
 function renderMovie(m){
+  currentMovie = m;
   const status = statusOf(m);
   document.title = (m.title || 'Фільм') + ' — yarosfactory';
 
@@ -126,9 +168,20 @@ function renderMovie(m){
         <div class="movie-meta">${m.year || ''}${m.year ? ' · ' : ''}${genresOf(m).map(g => `<a class="genre" href="archive.html?genre=${encodeURIComponent(g)}">${escapeHtml(g)}</a>`).join(' · ')}</div>
         ${m.orderedBy ? `<div class="ordered-by">Замовив(ла): <a href="https://www.twitch.tv/${encodeURIComponent(m.orderedBy)}" target="_blank" rel="noopener">${escapeHtml(m.orderedBy)}</a></div>` : ''}
         ${m.note ? `<p class="movie-note">${escapeHtml(m.note)}</p>` : ''}
+        ${isOwner ? `<button type="button" class="edit-toggle" id="editToggle">✏️ Редагувати</button>` : ''}
       </div>
     </div>
   `;
+
+  if(isOwner){
+    document.getElementById('editToggle').addEventListener('click', () => {
+      const panel = document.querySelector('.edit-panel');
+      panel.classList.toggle('open');
+    });
+    renderEditPanel(m);
+  } else {
+    editPanel.innerHTML = '';
+  }
 
   ratingBlock.innerHTML = `<div class="section-block"></div>`;
   renderViewerRating(ratingBlock.firstChild, m);
@@ -140,14 +193,117 @@ function renderMovie(m){
   renderComments(commentsBlock.firstChild, m);
 }
 
-initAuth(document.getElementById('authWidget'));
+function renderEditPanel(m){
+  const currentId = movieId(m);
+  editPanel.innerHTML = `
+    <div class="edit-panel">
+      <h3>Редагувати запис</h3>
 
-fetch('movies.json')
-  .then(res => {
+      <label for="eTitle">Назва</label>
+      <input type="text" id="eTitle" value="${escapeHtml(m.title || '')}">
+
+      <div class="edit-row">
+        <div>
+          <label for="eYear">Рік</label>
+          <input type="text" id="eYear" value="${m.year || ''}">
+        </div>
+        <div>
+          <label for="eWatched">Дата перегляду</label>
+          <input type="date" id="eWatched" value="${m.watched || ''}">
+        </div>
+      </div>
+
+      <label for="eGenre">Жанри (через кому)</label>
+      <input type="text" id="eGenre" value="${escapeHtml(genresOf(m).join(', '))}">
+
+      <label for="eEpisodes">Серії</label>
+      <input type="text" id="eEpisodes" value="${escapeHtml(m.episodes || '')}">
+
+      <label for="ePoster">Посилання на постер</label>
+      <input type="text" id="ePoster" value="${escapeHtml(m.poster || '')}">
+
+      <label for="eOrderedBy">Замовник (Twitch-логін)</label>
+      <input type="text" id="eOrderedBy" value="${escapeHtml(m.orderedBy || '')}">
+
+      <label for="eNote">Опис / нотатка</label>
+      <textarea id="eNote" rows="3">${escapeHtml(m.note || '')}</textarea>
+
+      <p class="edit-hint">Ідентифікатор фільму (коментарі й оцінки прив'язані саме до нього) — не чіпай, якщо не знаєш навіщо: <code>${escapeHtml(currentId)}</code></p>
+      <input type="hidden" id="eOriginalId" value="${escapeHtml(currentId)}">
+
+      <button type="button" class="edit-save" id="editSaveBtn">Зберегти зміни</button>
+      <div class="edit-status" id="editStatusBox"></div>
+      <p class="edit-token-note">Потрібен той самий GitHub-токен, що й на <a href="add-movie.html">сторінці додавання фільмів</a> — якщо він уже збережений у цьому браузері, нічого вводити не треба.</p>
+    </div>
+  `;
+
+  document.getElementById('editSaveBtn').addEventListener('click', saveEdit);
+}
+
+async function saveEdit(){
+  const statusBox = document.getElementById('editStatusBox');
+  const btn = document.getElementById('editSaveBtn');
+  statusBox.className = 'edit-status';
+
+  const originalId = document.getElementById('eOriginalId').value;
+  const title = document.getElementById('eTitle').value.trim();
+  const yearVal = document.getElementById('eYear').value.trim();
+  const watched = document.getElementById('eWatched').value;
+  const genreVal = document.getElementById('eGenre').value.trim();
+  const episodes = document.getElementById('eEpisodes').value.trim();
+  const poster = document.getElementById('ePoster').value.trim();
+  const orderedBy = document.getElementById('eOrderedBy').value.trim();
+  const note = document.getElementById('eNote').value.trim();
+
+  if(!title || !watched){
+    statusBox.className = 'edit-status show err';
+    statusBox.textContent = 'Заповни принаймні назву й дату перегляду.';
+    return;
+  }
+
+  const updated = { id: originalId, title };
+  if(yearVal) updated.year = parseInt(yearVal, 10);
+  if(genreVal){
+    const genres = genreVal.split(',').map(g => g.trim()).filter(Boolean);
+    updated.genre = genres.length > 1 ? genres : genres[0];
+  }
+  updated.watched = watched;
+  if(episodes) updated.episodes = episodes;
+  if(note) updated.note = note;
+  if(poster) updated.poster = poster;
+  if(orderedBy) updated.orderedBy = orderedBy;
+
+  btn.disabled = true;
+  btn.textContent = 'Зберігаю…';
+
+  try{
+    await commitMoviesArray(
+      arr => arr.map(x => movieId(x) === originalId ? updated : x),
+      `Редаговано фільм: ${title}`,
+      (attempt, max) => { btn.textContent = `Файл оновився, пробую ще раз (${attempt}/${max})…`; }
+    );
+    statusBox.className = 'edit-status show ok';
+    statusBox.innerHTML = `Збережено! Сайт оновиться протягом хвилини.`;
+    renderMovie(updated);
+    document.querySelector('.edit-panel').classList.add('open');
+  }catch(err){
+    statusBox.className = 'edit-status show err';
+    statusBox.textContent = err.message;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Зберегти зміни';
+  }
+}
+
+async function init(){
+  await initAuth(document.getElementById('authWidget'));
+  const user = getTwitchUser();
+  isOwner = !!(user && user.login === TWITCH_OWNER_LOGIN);
+
+  try{
+    const res = await fetch('movies.json');
     if(!res.ok) throw new Error('Не вдалося завантажити movies.json');
-    return res.json();
-  })
-  .then(data => {
+    const data = await res.json();
     const list = Array.isArray(data) ? data : [];
     const found = list.find(m => movieId(m) === wantedId);
     if(!found){
@@ -155,10 +311,12 @@ fetch('movies.json')
       return;
     }
     renderMovie(found);
-  })
-  .catch(err => {
+  }catch(err){
     movieSection.innerHTML = `<div class="empty-state">Не вдалося завантажити дані.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
-  });
+  }
+}
+
+init();
 </script>
 
 </body>
