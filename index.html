@@ -99,6 +99,7 @@
     background:var(--panel); border:1px solid var(--border); padding:20px 24px;
   }
   .today-banner p{ font-size:13.5px; color:var(--text-dim); margin:0 0 4px; }
+  .today-banner p strong{ color:var(--gold-bright); }
 </style>
 </head>
 <body>
@@ -139,11 +140,21 @@ const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
 
 function renderBanner(m){
-  if(m && statusOf(m) === 'today-empty'){
+  if(!m) { bannerSection.innerHTML = ''; return; }
+
+  const status = statusOf(m);
+  if(status === 'today-empty'){
     bannerSection.innerHTML = `
       <div class="today-banner">
         <p>На жаль, сьогодні нічого не заплановано.</p>
         <a class="twitch-link" href="https://www.twitch.tv/yarosfactory" target="_blank" rel="noopener">Замовити на стрімі →</a>
+      </div>
+    `;
+  } else if(status === 'today'){
+    bannerSection.innerHTML = `
+      <div class="today-banner">
+        <p>Сьогодні дивимось${m.orderedBy ? `. Замовлення: <strong>${escapeHtml(m.orderedBy)}</strong>` : ''}</p>
+        <a class="twitch-link" href="https://www.twitch.tv/yarosfactory" target="_blank" rel="noopener">Перейти на стрім →</a>
       </div>
     `;
   } else {
