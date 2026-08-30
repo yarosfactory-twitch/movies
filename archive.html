@@ -102,7 +102,8 @@ const searchInput = document.getElementById('searchInput');
 const sortSelect = document.getElementById('sortSelect');
 
 function ratingOf(m){
-  return RATINGS_MAP[movieId(m)] || 0;
+  const r = RATINGS_MAP[movieId(m)];
+  return r ? r.avg : 0;
 }
 
 async function loadRatingsMap(movies){
@@ -112,10 +113,10 @@ async function loadRatingsMap(movies){
       const snap = await db.collection('reactions').doc(movieId(m)).get();
       const data = snap.exists ? snap.data() : {};
       const count = data.ratingCount || 0;
-      const avg = count > 0 ? data.ratingSum / count : 0;
-      return [movieId(m), avg];
+      const sum = data.ratingSum || 0;
+      return [movieId(m), { avg: count > 0 ? sum / count : 0, sum, count }];
     }catch(e){
-      return [movieId(m), 0];
+      return [movieId(m), { avg: 0, sum: 0, count: 0 }];
     }
   }));
   return Object.fromEntries(entries);
@@ -206,7 +207,12 @@ function attachViewerRatings(){
 
 function buildStats(){
   const total = ALL_MOVIES.length;
-  const avg = total ? (ALL_MOVIES.reduce((s,m)=>s+(m.rating||0),0)/total).toFixed(1) : '0.0';
+  let sumTotal = 0, countTotal = 0;
+  ALL_MOVIES.forEach(m => {
+    const r = RATINGS_MAP[movieId(m)];
+    if(r && r.count > 0){ sumTotal += r.sum; countTotal += r.count; }
+  });
+  const avg = countTotal > 0 ? (sumTotal / countTotal).toFixed(1) : '—';
   const now = new Date();
   const thisMonth = ALL_MOVIES.filter(m=>{
     const d = new Date(m.watched);
@@ -216,7 +222,7 @@ function buildStats(){
   statsEl.innerHTML = `
     <div class="rune"><span class="num">${total}</span><span class="lbl">Всього</span></div>
     <div class="rune"><span class="num">${thisMonth}</span><span class="lbl">Цього місяця</span></div>
-    <div class="rune"><span class="num">${avg}</span><span class="lbl">Сер. оцінка</span></div>
+    <div class="rune"><span class="num">${avg}</span><span class="lbl">Сер. оцінка глядачів</span></div>
   `;
 }
 
@@ -265,6 +271,7 @@ fetch('movies.json')
 
     loadRatingsMap(ALL_MOVIES).then(map => {
       RATINGS_MAP = map;
+      buildStats();
       if(sortMode === 'rating-desc' || sortMode === 'rating-asc') render();
     });
   })
