@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Додати фільм — адмінка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap{ max-width:640px; padding:52px 20px 90px; }
+  header{ margin-bottom:36px; }
+  h1{ font-size:clamp(26px, 4vw, 36px); }
+  .sub{ max-width:100%; }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--border); padding:26px;
+    margin-bottom:22px; position:relative;
+  }
+  .panel::before, .panel::after{ content:""; position:absolute; width:16px; height:16px; opacity:0.8; }
+  .panel::before{ top:8px; left:8px; border-top:1px solid var(--gold); border-left:1px solid var(--gold); }
+  .panel::after{ bottom:8px; right:8px; border-bottom:1px solid var(--gold); border-right:1px solid var(--gold); }
+
+  .panel h2{
+    font-family:'Yeseva One', serif; font-weight:400; font-size:16px;
+    color:var(--gold-bright); margin:0 0 16px;
+  }
+
+  label{ display:block; font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-mute); margin:14px 0 6px; }
+  label:first-child{ margin-top:0; }
+  input[type=text], input[type=number], input[type=date], input[type=password], textarea{
+    width:100%; background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    padding:10px 12px; font-family:'Golos Text', sans-serif; font-size:14px; outline:none;
+    transition:border-color .2s; resize:vertical;
+  }
+  input:focus, textarea:focus{ border-color:var(--gold); }
+  .row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .hint{ font-size:11px; color:var(--text-mute); margin-top:4px; }
+
+  .token-row{ display:flex; gap:8px; align-items:flex-end; }
+  .token-row > div{ flex:1; }
+  .token-row button{
+    flex:0 0 auto; height:39px; padding:0 14px; background:var(--panel-2); border:1px solid var(--border);
+    color:var(--text-dim); cursor:pointer; font-size:12px;
+  }
+  .token-row button:hover{ border-color:var(--gold); color:var(--text); }
+
+  .submit-btn{
+    width:100%; margin-top:22px; background:var(--gold); border:1px solid var(--gold); color:#1b1610;
+    padding:13px; font-size:14px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s;
+  }
+  .submit-btn:hover{ background:var(--gold-bright); }
+  .submit-btn:disabled{ opacity:0.5; cursor:default; }
+
+  .status{ margin-top:16px; padding:14px 16px; font-size:13.5px; line-height:1.6; display:none; }
+  .status.show{ display:block; }
+  .status.ok{ border:1px solid rgba(83,116,104,0.5); color:var(--teal); background:rgba(83,116,104,0.08); }
+  .status.err{ border:1px solid #8a4a3d; color:#c98a7a; background:rgba(138,74,61,0.08); }
+  .status a{ color:inherit; font-weight:600; }
+
+  details{ margin-top:6px; }
+  details summary{ font-size:12px; color:var(--text-mute); cursor:pointer; }
+  details .row{ margin-top:12px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">yarosfactory · ярос</div>
+    <h1>Додати фільм</h1>
+    <p class="sub">Заповни форму — фільм одразу закомітиться в movies.json на GitHub, сайт оновиться сам за хвилину.</p>
+  </header>
+
+  <div class="panel">
+    <h2>Доступ до GitHub</h2>
+    <label for="ghToken">Personal Access Token</label>
+    <div class="token-row">
+      <div><input type="password" id="ghToken" placeholder="ghp_..."></div>
+      <button type="button" id="toggleToken">Показати</button>
+    </div>
+    <p class="hint">Зберігається тільки в цьому браузері. Створити: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained → права на цей репозиторій (Contents: Read and write).</p>
+
+    <details>
+      <summary>Налаштування репозиторію (звичайно не треба чіпати)</summary>
+      <div class="row">
+        <div>
+          <label for="ghOwner">Власник репозиторію</label>
+          <input type="text" id="ghOwner" value="yarosfactory-twitch">
+        </div>
+        <div>
+          <label for="ghRepo">Репозиторій</label>
+          <input type="text" id="ghRepo" value="movies">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="ghPath">Файл</label>
+          <input type="text" id="ghPath" value="movies.json">
+        </div>
+        <div>
+          <label for="ghBranch">Гілка</label>
+          <input type="text" id="ghBranch" value="main">
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <form class="panel" id="movieForm">
+    <h2>Фільм</h2>
+    <label for="fTitle">Назва *</label>
+    <input type="text" id="fTitle" required placeholder="Назва фільму">
+
+    <div class="row">
+      <div>
+        <label for="fYear">Рік</label>
+        <input type="number" id="fYear" placeholder="2024">
+      </div>
+      <div>
+        <label for="fWatched">Дата перегляду *</label>
+        <input type="date" id="fWatched" required>
+      </div>
+    </div>
+
+    <label for="fGenre">Жанри</label>
+    <input type="text" id="fGenre" placeholder="Комедія, Драма">
+    <p class="hint">Через кому, якщо кілька.</p>
+
+    <label for="fPoster">Посилання на постер</label>
+    <input type="text" id="fPoster" placeholder="https://image.tmdb.org/t/p/w500/...">
+
+    <label for="fOrderedBy">Замовник (Twitch-логін)</label>
+    <input type="text" id="fOrderedBy" placeholder="nickname">
+
+    <label for="fNote">Опис / нотатка</label>
+    <textarea id="fNote" rows="3" placeholder="Коротко про фільм або враження від перегляду"></textarea>
+
+    <button type="submit" class="submit-btn" id="submitBtn">Додати фільм на сайт</button>
+
+    <div class="status" id="statusBox"></div>
+  </form>
+</div>
+
+<script>
+const LS_KEYS = { token:'am_gh_token', owner:'am_gh_owner', repo:'am_gh_repo', path:'am_gh_path', branch:'am_gh_branch' };
+
+const tokenInput = document.getElementById('ghToken');
+const ownerInput = document.getElementById('ghOwner');
+const repoInput = document.getElementById('ghRepo');
+const pathInput = document.getElementById('ghPath');
+const branchInput = document.getElementById('ghBranch');
+const toggleBtn = document.getElementById('toggleToken');
+const form = document.getElementById('movieForm');
+const submitBtn = document.getElementById('submitBtn');
+const statusBox = document.getElementById('statusBox');
+const watchedInput = document.getElementById('fWatched');
+
+// restore saved settings
+tokenInput.value = localStorage.getItem(LS_KEYS.token) || '';
+ownerInput.value = localStorage.getItem(LS_KEYS.owner) || ownerInput.value;
+repoInput.value = localStorage.getItem(LS_KEYS.repo) || repoInput.value;
+pathInput.value = localStorage.getItem(LS_KEYS.path) || pathInput.value;
+branchInput.value = localStorage.getItem(LS_KEYS.branch) || branchInput.value;
+
+// default watched date = today
+const today = new Date();
+watchedInput.value = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+
+[tokenInput, ownerInput, repoInput, pathInput, branchInput].forEach((el, i) => {
+  const key = [LS_KEYS.token, LS_KEYS.owner, LS_KEYS.repo, LS_KEYS.path, LS_KEYS.branch][i];
+  el.addEventListener('change', () => localStorage.setItem(key, el.value.trim()));
+});
+
+toggleBtn.addEventListener('click', () => {
+  const isPw = tokenInput.type === 'password';
+  tokenInput.type = isPw ? 'text' : 'password';
+  toggleBtn.textContent = isPw ? 'Сховати' : 'Показати';
+});
+
+function showStatus(kind, html){
+  statusBox.className = 'status show ' + kind;
+  statusBox.innerHTML = html;
+}
+
+function decodeBase64Utf8(b64){
+  return decodeURIComponent(escape(atob(b64.replace(/\n/g, ''))));
+}
+function encodeBase64Utf8(str){
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function slugify(str){
+  return (str || 'movie').toString().trim().toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '') || 'movie';
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusBox.className = 'status';
+
+  const token = tokenInput.value.trim();
+  const owner = ownerInput.value.trim();
+  const repo = repoInput.value.trim();
+  const path = pathInput.value.trim();
+  const branch = branchInput.value.trim() || 'main';
+
+  if(!token){
+    showStatus('err', 'Встав спочатку GitHub-токен.');
+    return;
+  }
+
+  const title = document.getElementById('fTitle').value.trim();
+  const yearVal = document.getElementById('fYear').value.trim();
+  const watched = document.getElementById('fWatched').value;
+  const genreVal = document.getElementById('fGenre').value.trim();
+  const poster = document.getElementById('fPoster').value.trim();
+  const orderedBy = document.getElementById('fOrderedBy').value.trim();
+  const note = document.getElementById('fNote').value.trim();
+
+  if(!title || !watched){
+    showStatus('err', 'Заповни принаймні назву й дату перегляду.');
+    return;
+  }
+
+  const movie = { title };
+  if(yearVal) movie.year = parseInt(yearVal, 10);
+  if(genreVal){
+    const genres = genreVal.split(',').map(g => g.trim()).filter(Boolean);
+    movie.genre = genres.length > 1 ? genres : genres[0];
+  }
+  movie.watched = watched;
+  if(note) movie.note = note;
+  if(poster) movie.poster = poster;
+  if(orderedBy) movie.orderedBy = orderedBy;
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Зберігаю…';
+
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const headers = {
+    'Authorization': `token ${token}`,
+    'Accept': 'application/vnd.github+json'
+  };
+
+  try{
+    const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, { headers });
+    if(!getRes.ok){
+      if(getRes.status === 401) throw new Error('Токен недійсний або прострочений.');
+      if(getRes.status === 404) throw new Error('Файл або репозиторій не знайдено — перевір налаштування нижче.');
+      throw new Error(`Помилка читання файлу (${getRes.status}).`);
+    }
+    const getData = await getRes.json();
+    const currentContent = decodeBase64Utf8(getData.content);
+    let arr;
+    try{
+      arr = JSON.parse(currentContent);
+    }catch(parseErr){
+      throw new Error('movies.json пошкоджений або не є валідним JSON — перевір файл на GitHub вручну.');
+    }
+    if(!Array.isArray(arr)) throw new Error('movies.json має бути масивом.');
+
+    arr.push(movie);
+    const newContent = JSON.stringify(arr, null, 2) + '\n';
+
+    const putRes = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `Додано фільм: ${title}`,
+        content: encodeBase64Utf8(newContent),
+        sha: getData.sha,
+        branch: branch
+      })
+    });
+
+    if(!putRes.ok){
+      if(putRes.status === 409) throw new Error('Файл змінився паралельно (конфлікт версій) — онови сторінку і спробуй ще раз.');
+      if(putRes.status === 403) throw new Error('Токену бракує прав на запис (Contents: Read and write) для цього репозиторію.');
+      throw new Error(`Помилка запису (${putRes.status}).`);
+    }
+
+    showStatus('ok', `«${title}» додано! Сайт оновиться протягом хвилини — <a href="movie.html?id=${encodeURIComponent(slugify(title))}" target="_blank">перевірити сторінку фільму →</a>`);
+    form.reset();
+    watchedInput.value = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  }catch(err){
+    showStatus('err', escapeHtml(err.message));
+  }finally{
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Додати фільм на сайт';
+  }
+});
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str ?? '';
+  return d.innerHTML;
+}
+</script>
+
+</body>
+</html>
