@@ -74,6 +74,7 @@
       <a href="index.html">← Сьогодні дивимось</a>
       <a href="archive.html">Весь архів →</a>
     </nav>
+    <div id="authWidget"></div>
   </header>
 
   <div class="back-row"><button onclick="history.length > 1 ? history.back() : (window.location.href='index.html')">← Повернутися назад</button></div>
@@ -136,6 +137,8 @@ function renderMovie(m){
   commentsBlock.innerHTML = `<div class="section-block"></div>`;
   renderComments(commentsBlock.firstChild, m);
 }
+
+initAuth(document.getElementById('authWidget'));
 
 fetch('movies.json')
   .then(res => {
