@@ -170,7 +170,7 @@ function nodeHtml(idx, offset){
   const status = statusOf(m);
   let inner;
   if(m.__placeholder){
-    inner = `<span class="q">?</span>`;
+    inner = `<img src="no-order.jpg" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;q&quot;>?</span>'">`;
   } else {
     inner = m.poster
       ? `<img src="${escapeHtml(m.poster)}" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;mono&quot;>${escapeHtml(m.title||'')}</span>'">`
