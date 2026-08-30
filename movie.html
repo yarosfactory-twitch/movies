@@ -44,7 +44,8 @@
     color:var(--text); margin:0 0 10px; line-height:1.25;
   }
   .movie-meta{ font-size:13px; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px; }
-  .movie-meta .genre{ color:var(--teal); }
+  .movie-meta .genre{ color:var(--teal); text-decoration:none; border-bottom:1px solid transparent; transition:border-color .15s, color .15s; }
+  .movie-meta .genre:hover{ color:var(--gold-bright); border-color:var(--gold-bright); }
   .rating-label{ font-size:11px; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
   .movie-body .bar{ margin-bottom:16px; }
   .ordered-by{ font-size:13px; color:var(--text-dim); margin-bottom:14px; }
@@ -121,7 +122,7 @@ function renderMovie(m){
       <div class="movie-body">
         ${tagHtml}
         <h2>${escapeHtml(m.title)}</h2>
-        <div class="movie-meta">${m.year || ''}${m.year ? ' · ' : ''}<span class="genre">${escapeHtml(genresOf(m).join(' · '))}</span></div>
+        <div class="movie-meta">${m.year || ''}${m.year ? ' · ' : ''}${genresOf(m).map(g => `<a class="genre" href="archive.html?genre=${encodeURIComponent(g)}">${escapeHtml(g)}</a>`).join(' · ')}</div>
         ${m.orderedBy ? `<div class="ordered-by">Замовив(ла): <a href="https://www.twitch.tv/${encodeURIComponent(m.orderedBy)}" target="_blank" rel="noopener">${escapeHtml(m.orderedBy)}</a></div>` : ''}
         ${m.note ? `<p class="movie-note">${escapeHtml(m.note)}</p>` : ''}
       </div>
