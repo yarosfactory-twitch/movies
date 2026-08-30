@@ -69,9 +69,11 @@
       <input type="text" id="searchInput" placeholder="Пошук за назвою…">
     </div>
     <select class="sort-select" id="sortSelect">
-      <option value="date">Спочатку нові</option>
+      <option value="date-desc">За датою перегляду (спочатку нові)</option>
+      <option value="date-asc">За датою перегляду (спочатку давніші)</option>
       <option value="rating-desc">За оцінкою (від найвищої)</option>
       <option value="rating-asc">За оцінкою (від найнижчої)</option>
+      <option value="year-desc">За роком (від нових)</option>
       <option value="year-asc">За роком (від старих)</option>
     </select>
     <div class="chips" id="genreChips"></div>
@@ -90,7 +92,7 @@
 <script>
 let ALL_MOVIES = [];
 let activeGenre = 'Усі';
-let sortMode = 'date';
+let sortMode = 'date-desc';
 
 const grid = document.getElementById('grid');
 const statsEl = document.getElementById('stats');
@@ -110,8 +112,12 @@ function render(){
     filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
   } else if(sortMode === 'rating-asc'){
     filtered.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+  } else if(sortMode === 'year-desc'){
+    filtered.sort((a, b) => (b.year || 0) - (a.year || 0));
   } else if(sortMode === 'year-asc'){
     filtered.sort((a, b) => (a.year || 0) - (b.year || 0));
+  } else if(sortMode === 'date-asc'){
+    filtered.sort((a, b) => new Date(a.watched) - new Date(b.watched));
   } else {
     filtered.sort((a, b) => new Date(b.watched) - new Date(a.watched));
   }
