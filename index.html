@@ -33,7 +33,7 @@
     display:flex;
     align-items:flex-start;
     justify-content:center;
-    gap:clamp(10px, 2vw, 18px);
+    gap:clamp(4px, 0.8vw, 8px);
     padding:16px 0 8px;
     will-change:transform;
   }
@@ -41,6 +41,7 @@
   .node{
     flex:0 0 auto;
     width:var(--card-w);
+    overflow:hidden;
     display:flex; flex-direction:column; align-items:center; gap:8px;
     cursor:pointer;
     animation:fadein .22s ease;
@@ -54,6 +55,7 @@
     height:var(--slot-h);
     width:100%;
     display:flex; align-items:center; justify-content:center;
+    flex:0 0 auto;
   }
 
   .poster-card{
@@ -115,6 +117,7 @@
   <div class="carousel-shell">
     <button class="arrow" id="prevBtn" aria-label="Назад">‹</button>
     <div class="stage" id="stage">
+      <div id="widthProbe" style="position:absolute; visibility:hidden; pointer-events:none; width:var(--card-w); height:0;"></div>
       <div class="track" id="track"></div>
     </div>
     <button class="arrow" id="nextBtn" aria-label="Вперед">›</button>
@@ -214,6 +217,14 @@ function renderWindow(){
 }
 
 /* ---- Continuous coverflow scaling: recalculated every frame from the track's live position ---- */
+const widthProbe = document.getElementById('widthProbe');
+let baseCardW = 200;
+function updateBaseWidth(){
+  const w = widthProbe.getBoundingClientRect().width;
+  if(w > 0) baseCardW = w;
+}
+window.addEventListener('resize', updateBaseWidth);
+
 function updateScales(){
   const stageRect = stage.getBoundingClientRect();
   if(stageRect.width === 0) return;
@@ -228,8 +239,7 @@ function updateScales(){
     const scale = 1 - t * 0.62;
     const opacity = Math.max(1 - t * 0.85, 0.15);
 
-    const poster = node.querySelector('.poster-card');
-    if(poster) poster.style.transform = `scale(${scale.toFixed(3)})`;
+    node.style.width = Math.max(baseCardW * scale, 40) + 'px';
     node.style.opacity = opacity.toFixed(2);
     node.classList.toggle('is-focused', t < 0.2);
     node.classList.toggle('is-compact', t > 0.5);
@@ -240,7 +250,7 @@ function scaleLoop(){
   updateScales();
   requestAnimationFrame(scaleLoop);
 }
-requestAnimationFrame(scaleLoop);
+requestAnimationFrame(() => { updateBaseWidth(); scaleLoop(); });
 
 let ratingUnsubs = [];
 function attachViewerRatings(){
@@ -319,12 +329,14 @@ document.addEventListener('keydown', (e) => {
 let dragStartX = null;
 let dragCurrentDX = 0;
 let dragMoved = false;
+let velocitySamples = [];
 
 stage.addEventListener('pointerdown', (e) => {
   if(isAnimating) return;
   dragStartX = e.clientX;
   dragCurrentDX = 0;
   dragMoved = false;
+  velocitySamples = [{ t: performance.now(), x: e.clientX }];
   track.style.transition = 'none';
 });
 stage.addEventListener('pointermove', (e) => {
@@ -332,19 +344,38 @@ stage.addEventListener('pointermove', (e) => {
   dragCurrentDX = e.clientX - dragStartX;
   if(Math.abs(dragCurrentDX) > 10) dragMoved = true;
   track.style.transform = `translateX(${dragCurrentDX}px)`;
+
+  const now = performance.now();
+  velocitySamples.push({ t: now, x: e.clientX });
+  while(velocitySamples.length > 2 && now - velocitySamples[0].t > 80){
+    velocitySamples.shift();
+  }
 });
 stage.addEventListener('pointerup', () => {
   if(dragStartX === null) return;
   const dx = dragCurrentDX;
   dragStartX = null;
 
+  // velocity in px/ms over the last ~80ms of movement, for inertia
+  let velocity = 0;
+  if(velocitySamples.length >= 2){
+    const first = velocitySamples[0];
+    const last = velocitySamples[velocitySamples.length - 1];
+    const dt = last.t - first.t;
+    if(dt > 0) velocity = (last.x - first.x) / dt;
+  }
+  const maxExtra = stage.clientWidth * 1.4;
+  const extra = Math.max(-maxExtra, Math.min(maxExtra, velocity * 140));
+
   const stageRect = stage.getBoundingClientRect();
   const centerX = stageRect.left + stageRect.width / 2;
+  const lookupX = centerX - extra;
+
   let best = null, bestDist = Infinity;
   track.querySelectorAll('.node[data-index]').forEach(node => {
     const r = node.getBoundingClientRect();
     const nodeCenter = r.left + r.width / 2;
-    const dist = Math.abs(nodeCenter - centerX);
+    const dist = Math.abs(nodeCenter - lookupX);
     if(dist < bestDist){ bestDist = dist; best = node; }
   });
 
@@ -356,9 +387,10 @@ stage.addEventListener('pointerup', () => {
     const r = best.getBoundingClientRect();
     const nodeCenter = r.left + r.width / 2;
     const finalTransform = dx + (centerX - nodeCenter);
+    const duration = Math.min(0.42, 0.2 + Math.abs(extra) / stage.clientWidth * 0.18);
 
     isAnimating = true;
-    track.style.transition = 'transform .22s cubic-bezier(.22,.61,.36,1)';
+    track.style.transition = `transform ${duration.toFixed(2)}s cubic-bezier(.15,.7,.25,1)`;
     track.style.transform = `translateX(${finalTransform}px)`;
     track.addEventListener('transitionend', function handler(){
       track.removeEventListener('transitionend', handler);
