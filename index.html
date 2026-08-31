@@ -193,7 +193,7 @@ function nodeHtml(idx, offset){
   `;
 }
 
-const BUFFER = 6;
+const BUFFER = 10;
 
 function renderWindow(){
   const offsets = [];
@@ -338,6 +338,9 @@ stage.addEventListener('pointerdown', (e) => {
   dragMoved = false;
   velocitySamples = [{ t: performance.now(), x: e.clientX }];
   track.style.transition = 'none';
+  if(stage.setPointerCapture){
+    try{ stage.setPointerCapture(e.pointerId); }catch(err){}
+  }
 });
 stage.addEventListener('pointermove', (e) => {
   if(dragStartX === null) return;
@@ -351,7 +354,7 @@ stage.addEventListener('pointermove', (e) => {
     velocitySamples.shift();
   }
 });
-stage.addEventListener('pointerup', () => {
+function finishDrag(){
   if(dragStartX === null) return;
   const dx = dragCurrentDX;
   dragStartX = null;
@@ -402,11 +405,18 @@ stage.addEventListener('pointerup', () => {
   }
 
   setTimeout(() => { dragMoved = false; }, 0);
-});
+}
+
+stage.addEventListener('pointerup', finishDrag);
 stage.addEventListener('pointercancel', () => {
   dragStartX = null;
   snapBack();
 });
+/* safety net: if the button is released outside the window (or the tab loses focus)
+   pointerup can be missed entirely — make sure the drag always gets released */
+window.addEventListener('blur', () => { if(dragStartX !== null) finishDrag(); });
+document.addEventListener('pointerup', () => { if(dragStartX !== null) finishDrag(); });
+document.addEventListener('pointerleave', () => { if(dragStartX !== null) finishDrag(); });
 
 initAuth(document.getElementById('authWidget'));
 
