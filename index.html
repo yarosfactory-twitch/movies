@@ -32,16 +32,16 @@
   .stage{ flex:1; overflow:hidden; touch-action:pan-y; user-select:none; }
 
   .track{
-    display:grid;
-    grid-template-columns: var(--tier2-w) var(--tier1-w) var(--tier0-w) var(--tier1-w) var(--tier2-w);
-    column-gap:clamp(10px, 2vw, 18px);
+    display:flex;
+    align-items:flex-start;
     justify-content:center;
-    align-items:start;
+    gap:clamp(10px, 2vw, 18px);
     padding:16px 0 8px;
     will-change:transform;
   }
 
   .node{
+    flex:0 0 auto;
     display:flex; flex-direction:column; align-items:center; gap:8px;
     cursor:pointer;
     animation:fadein .22s ease;
@@ -49,6 +49,10 @@
   .node.empty, .node.today-empty{ cursor:default; }
   .node.empty{ visibility:hidden; pointer-events:none; }
   @keyframes fadein{ from{ opacity:0; } to{ opacity:1; } }
+
+  .node.tier-0{ width:var(--tier0-w); }
+  .node.tier-1{ width:var(--tier1-w); }
+  .node.tier-2{ width:var(--tier2-w); }
 
   .poster-slot{
     height:var(--slot-h);
@@ -89,12 +93,11 @@
   }
   .node-date{ font-size:9.5px; color:var(--text-mute); }
 
-  .node[data-offset="0"] .node-title{ color:var(--text); font-weight:600; font-size:17px; }
-  .node[data-offset="0"] .node-date{ font-size:12px; color:var(--text-dim); }
-  .node[data-offset="1"] .poster-card, .node[data-offset="-1"] .poster-card{ opacity:0.85; }
-  .node[data-offset="2"] .poster-card, .node[data-offset="-2"] .poster-card{ opacity:0.55; }
-  .node[data-offset="2"] .node-title, .node[data-offset="-2"] .node-title,
-  .node[data-offset="2"] .node-date, .node[data-offset="-2"] .node-date{ display:none; }
+  .node.tier-0 .node-title{ color:var(--text); font-weight:600; font-size:17px; }
+  .node.tier-0 .node-date{ font-size:12px; color:var(--text-dim); }
+  .node.tier-1 .poster-card{ opacity:0.85; }
+  .node.tier-2 .poster-card{ opacity:0.55; }
+  .node.tier-2 .node-title, .node.tier-2 .node-date{ display:none; }
 
   .today-banner{
     max-width:520px; margin:26px auto 0; text-align:center;
@@ -165,8 +168,9 @@ function renderBanner(m){
 }
 
 function nodeHtml(idx, offset){
+  const tier = Math.abs(offset) === 0 ? 'tier-0' : Math.abs(offset) === 1 ? 'tier-1' : 'tier-2';
   if(idx < 0 || idx >= MERGED.length){
-    return `<div class="node empty" style="grid-column:${offset+3}"></div>`;
+    return `<div class="node empty ${tier}"></div>`;
   }
   const m = MERGED[idx];
   const status = statusOf(m);
@@ -186,7 +190,7 @@ function nodeHtml(idx, offset){
     : '';
   const title = m.__placeholder ? 'Сьогодні' : (m.title || '');
   return `
-    <div class="node ${status}" style="grid-column:${offset+3}" data-index="${idx}" data-offset="${offset}">
+    <div class="node ${status} ${tier}" data-index="${idx}" data-offset="${offset}">
       <div class="poster-slot"><div class="poster-card">${inner}${flame}${ratingBadge}</div></div>
       <div class="node-title">${escapeHtml(title)}</div>
       <div class="node-date">${fmtDateShort(m.watched)}</div>
@@ -194,8 +198,11 @@ function nodeHtml(idx, offset){
   `;
 }
 
+const BUFFER = 6;
+
 function renderWindow(){
-  const offsets = [-2, -1, 0, 1, 2];
+  const offsets = [];
+  for(let i = -BUFFER; i <= BUFFER; i++) offsets.push(i);
   track.innerHTML = offsets.map(off => nodeHtml(currentIndex + off, off)).join('');
 
   track.querySelectorAll('.node[data-index]').forEach(node => {
