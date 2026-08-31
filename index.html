@@ -305,11 +305,13 @@ function canMove(direction){
 }
 
 function snapBack(){
-  track.style.transition = 'transform .24s cubic-bezier(.22,.61,.36,1)';
+  isAnimating = true;
+  track.style.transition = 'transform .22s cubic-bezier(.08,.75,.15,1)';
   track.style.transform = 'translateX(0px)';
   track.addEventListener('transitionend', function handler(){
     track.removeEventListener('transitionend', handler);
     track.style.transition = 'none';
+    isAnimating = false;
   }, { once: true });
 }
 
