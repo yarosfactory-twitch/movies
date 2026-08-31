@@ -231,7 +231,7 @@ function updateScales(){
   const centerX = stageRect.left + stageRect.width / 2;
   const maxDist = stageRect.width * 0.62 + 60;
 
-  track.querySelectorAll('.node:not(.empty)').forEach(node => {
+  track.querySelectorAll('.node').forEach(node => {
     const r = node.getBoundingClientRect();
     const nodeCenter = r.left + r.width / 2;
     const dist = Math.abs(nodeCenter - centerX);
@@ -365,7 +365,7 @@ stage.addEventListener('pointerup', () => {
     if(dt > 0) velocity = (last.x - first.x) / dt;
   }
   const maxExtra = stage.clientWidth * 1.4;
-  const extra = Math.max(-maxExtra, Math.min(maxExtra, velocity * 140));
+  const extra = Math.max(-maxExtra, Math.min(maxExtra, velocity * 260));
 
   const stageRect = stage.getBoundingClientRect();
   const centerX = stageRect.left + stageRect.width / 2;
@@ -387,10 +387,10 @@ stage.addEventListener('pointerup', () => {
     const r = best.getBoundingClientRect();
     const nodeCenter = r.left + r.width / 2;
     const finalTransform = dx + (centerX - nodeCenter);
-    const duration = Math.min(0.42, 0.2 + Math.abs(extra) / stage.clientWidth * 0.18);
+    const duration = Math.min(0.65, 0.24 + Math.abs(extra) / stage.clientWidth * 0.32);
 
     isAnimating = true;
-    track.style.transition = `transform ${duration.toFixed(2)}s cubic-bezier(.15,.7,.25,1)`;
+    track.style.transition = `transform ${duration.toFixed(2)}s cubic-bezier(.08,.75,.15,1)`;
     track.style.transform = `translateX(${finalTransform}px)`;
     track.addEventListener('transitionend', function handler(){
       track.removeEventListener('transitionend', handler);
