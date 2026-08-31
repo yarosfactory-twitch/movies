@@ -62,7 +62,7 @@
     position:relative; overflow:hidden;
     transition:border-color .2s ease, box-shadow .2s ease;
   }
-  .poster-card img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .poster-card img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; -webkit-user-drag:none; user-drag:none; user-select:none; pointer-events:none; }
   .poster-card .mono{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     text-align:center; padding:10px; font-family:'Spectral', serif; font-size:13px; color:var(--text-mute);
@@ -171,10 +171,10 @@ function nodeHtml(idx, offset){
   const status = statusOf(m);
   let inner;
   if(m.__placeholder){
-    inner = `<img src="no-order.jpg" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;q&quot;>?</span>'">`;
+    inner = `<img src="no-order.jpg" alt="" draggable="false" onerror="this.parentElement.innerHTML='<span class=&quot;q&quot;>?</span>'">`;
   } else {
     inner = m.poster
-      ? `<img src="${escapeHtml(m.poster)}" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;mono&quot;>${escapeHtml(m.title||'')}</span>'">`
+      ? `<img src="${escapeHtml(m.poster)}" alt="" draggable="false" onerror="this.parentElement.innerHTML='<span class=&quot;mono&quot;>${escapeHtml(m.title||'')}</span>'">`
       : `<span class="mono">${escapeHtml(m.title||'')}</span>`;
   }
   const flame = status === 'today' ? '<span class="flame">🔥</span>' : '';
