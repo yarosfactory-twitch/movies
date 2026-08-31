@@ -31,7 +31,7 @@
 
   .track{
     position:relative;
-    height:calc(var(--slot-h) + 54px);
+    height:calc(var(--slot-h) + 76px);
     padding-top:16px;
   }
 
@@ -43,6 +43,12 @@
   }
   .node.empty, .node.today-empty{ cursor:default; }
   .node.empty{ visibility:hidden; pointer-events:none; }
+
+  .node-info{
+    height:44px;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    gap:4px;
+  }
 
   .poster-slot{
     height:var(--slot-h);
@@ -180,8 +186,10 @@ function nodeHtml(idx, offset){
   return `
     <div class="node ${status}" data-index="${idx}" data-offset="${offset}">
       <div class="poster-slot"><div class="poster-card">${inner}${flame}${ratingBadge}</div></div>
-      <div class="node-title">${escapeHtml(title)}</div>
-      <div class="node-date">${fmtDateShort(m.watched)}</div>
+      <div class="node-info">
+        <div class="node-title">${escapeHtml(title)}</div>
+        <div class="node-date">${fmtDateShort(m.watched)}</div>
+      </div>
     </div>
   `;
 }
