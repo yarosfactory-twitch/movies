@@ -11,10 +11,8 @@
 <link rel="stylesheet" href="common.css">
 <style>
   :root{
-    --tier2-w: clamp(70px, 9vw, 116px);
-    --tier1-w: clamp(100px, 13vw, 168px);
-    --tier0-w: clamp(140px, 18vw, 228px);
-    --slot-h: calc(var(--tier0-w) * 1.5);
+    --card-w: clamp(140px, 18vw, 228px);
+    --slot-h: calc(var(--card-w) * 1.5);
   }
 
   /* ---------- Carousel (fixed 5-slot stage) ---------- */
@@ -42,17 +40,15 @@
 
   .node{
     flex:0 0 auto;
+    width:var(--card-w);
     display:flex; flex-direction:column; align-items:center; gap:8px;
     cursor:pointer;
     animation:fadein .22s ease;
+    transition:opacity .05s linear;
   }
   .node.empty, .node.today-empty{ cursor:default; }
   .node.empty{ visibility:hidden; pointer-events:none; }
   @keyframes fadein{ from{ opacity:0; } to{ opacity:1; } }
-
-  .node.tier-0{ width:var(--tier0-w); }
-  .node.tier-1{ width:var(--tier1-w); }
-  .node.tier-2{ width:var(--tier2-w); }
 
   .poster-slot{
     height:var(--slot-h);
@@ -88,16 +84,14 @@
   .node .flame{ position:absolute; bottom:-2px; right:-2px; font-size:12px; z-index:2; }
 
   .node-title{
-    font-size:11px; color:var(--text-dim); text-align:center; max-width:100%;
+    font-size:12.5px; color:var(--text-dim); text-align:center; max-width:100%;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .node-date{ font-size:9.5px; color:var(--text-mute); }
+  .node-date{ font-size:10px; color:var(--text-mute); }
 
-  .node.tier-0 .node-title{ color:var(--text); font-weight:600; font-size:17px; }
-  .node.tier-0 .node-date{ font-size:12px; color:var(--text-dim); }
-  .node.tier-1 .poster-card{ opacity:0.85; }
-  .node.tier-2 .poster-card{ opacity:0.55; }
-  .node.tier-2 .node-title, .node.tier-2 .node-date{ display:none; }
+  .node.is-focused .node-title{ color:var(--text); font-weight:600; font-size:17px; }
+  .node.is-focused .node-date{ font-size:12px; color:var(--text-dim); }
+  .node.is-compact .node-title, .node.is-compact .node-date{ display:none; }
 
   .today-banner{
     max-width:520px; margin:26px auto 0; text-align:center;
@@ -168,9 +162,8 @@ function renderBanner(m){
 }
 
 function nodeHtml(idx, offset){
-  const tier = Math.abs(offset) === 0 ? 'tier-0' : Math.abs(offset) === 1 ? 'tier-1' : 'tier-2';
   if(idx < 0 || idx >= MERGED.length){
-    return `<div class="node empty ${tier}"></div>`;
+    return `<div class="node empty"></div>`;
   }
   const m = MERGED[idx];
   const status = statusOf(m);
@@ -183,14 +176,13 @@ function nodeHtml(idx, offset){
       : `<span class="mono">${escapeHtml(m.title||'')}</span>`;
   }
   const flame = status === 'today' ? '<span class="flame">🔥</span>' : '';
-  const showBadge = !m.__placeholder && Math.abs(offset) <= 1;
   const hostRating = m.rating ? (Number.isInteger(m.rating) ? m.rating : m.rating.toFixed(1)) : '';
-  const ratingBadge = showBadge
+  const ratingBadge = !m.__placeholder
     ? `<div class="badge-rating" ${hostRating ? '' : 'style="display:none"'}><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6h6.4l-5.2 4 2 6.4L10 13.8 4.2 17.4l2-6.4L1 7h6.4z"/></svg><span class="val">${hostRating}</span></div>`
     : '';
   const title = m.__placeholder ? 'Сьогодні' : (m.title || '');
   return `
-    <div class="node ${status} ${tier}" data-index="${idx}" data-offset="${offset}">
+    <div class="node ${status}" data-index="${idx}" data-offset="${offset}">
       <div class="poster-slot"><div class="poster-card">${inner}${flame}${ratingBadge}</div></div>
       <div class="node-title">${escapeHtml(title)}</div>
       <div class="node-date">${fmtDateShort(m.watched)}</div>
@@ -220,6 +212,35 @@ function renderWindow(){
 
   attachViewerRatings();
 }
+
+/* ---- Continuous coverflow scaling: recalculated every frame from the track's live position ---- */
+function updateScales(){
+  const stageRect = stage.getBoundingClientRect();
+  if(stageRect.width === 0) return;
+  const centerX = stageRect.left + stageRect.width / 2;
+  const maxDist = stageRect.width * 0.62 + 60;
+
+  track.querySelectorAll('.node:not(.empty)').forEach(node => {
+    const r = node.getBoundingClientRect();
+    const nodeCenter = r.left + r.width / 2;
+    const dist = Math.abs(nodeCenter - centerX);
+    const t = Math.min(dist / maxDist, 1);
+    const scale = 1 - t * 0.62;
+    const opacity = Math.max(1 - t * 0.85, 0.15);
+
+    const poster = node.querySelector('.poster-card');
+    if(poster) poster.style.transform = `scale(${scale.toFixed(3)})`;
+    node.style.opacity = opacity.toFixed(2);
+    node.classList.toggle('is-focused', t < 0.2);
+    node.classList.toggle('is-compact', t > 0.5);
+  });
+}
+
+function scaleLoop(){
+  updateScales();
+  requestAnimationFrame(scaleLoop);
+}
+requestAnimationFrame(scaleLoop);
 
 let ratingUnsubs = [];
 function attachViewerRatings(){
