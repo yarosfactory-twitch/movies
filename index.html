@@ -328,11 +328,30 @@ document.addEventListener('keydown', (e) => {
 /* swipe / drag support — carousel follows the pointer live, like spinning a physical wheel */
 let dragStartX = null;
 let dragCurrentDX = 0;
+let dragBaseOffset = 0;
 let dragMoved = false;
 let velocitySamples = [];
 
+function getCurrentTranslateX(){
+  const t = getComputedStyle(track).transform;
+  if(!t || t === 'none') return 0;
+  const match = t.match(/matrix\(([^)]+)\)/);
+  if(!match) return 0;
+  const parts = match[1].split(',').map(parseFloat);
+  return parts[4] || 0;
+}
+
 stage.addEventListener('pointerdown', (e) => {
-  if(isAnimating) return;
+  if(isAnimating){
+    // interrupt whatever animation is mid-flight and continue smoothly from its current position
+    const liveX = getCurrentTranslateX();
+    track.style.transition = 'none';
+    track.style.transform = `translateX(${liveX}px)`;
+    dragBaseOffset = liveX;
+    isAnimating = false;
+  } else {
+    dragBaseOffset = 0;
+  }
   dragStartX = e.clientX;
   dragCurrentDX = 0;
   dragMoved = false;
@@ -346,7 +365,7 @@ stage.addEventListener('pointermove', (e) => {
   if(dragStartX === null) return;
   dragCurrentDX = e.clientX - dragStartX;
   if(Math.abs(dragCurrentDX) > 10) dragMoved = true;
-  track.style.transform = `translateX(${dragCurrentDX}px)`;
+  track.style.transform = `translateX(${dragBaseOffset + dragCurrentDX}px)`;
 
   const now = performance.now();
   velocitySamples.push({ t: now, x: e.clientX });
@@ -356,7 +375,7 @@ stage.addEventListener('pointermove', (e) => {
 });
 function finishDrag(){
   if(dragStartX === null) return;
-  const dx = dragCurrentDX;
+  const dx = dragBaseOffset + dragCurrentDX;
   dragStartX = null;
 
   // velocity in px/ms over the last ~80ms of movement, for inertia
