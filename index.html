@@ -15,7 +15,7 @@
     --slot-h: calc(var(--card-w) * 1.5);
   }
 
-  /* ---------- Carousel (fixed 5-slot stage) ---------- */
+  /* ---------- Carousel (analytically positioned, transform-driven) ---------- */
   .carousel-shell{ position:relative; display:flex; align-items:center; gap:8px; }
 
   .arrow{
@@ -27,21 +27,17 @@
   .arrow:hover{ border-color:var(--gold); color:var(--gold-bright); }
   .arrow:disabled{ opacity:0.3; cursor:default; pointer-events:none; }
 
-  .stage{ flex:1; overflow:hidden; touch-action:pan-y; user-select:none; }
+  .stage{ flex:1; position:relative; overflow:hidden; touch-action:pan-y; user-select:none; }
 
   .track{
-    display:flex;
-    align-items:flex-start;
-    justify-content:center;
-    gap:clamp(4px, 0.8vw, 8px);
-    padding:16px 0 8px;
-    will-change:transform;
+    position:relative;
+    height:calc(var(--slot-h) + 54px);
+    padding-top:16px;
   }
 
   .node{
-    flex:0 0 auto;
-    width:var(--card-w);
-    overflow:hidden;
+    position:absolute;
+    top:16px; left:0;
     display:flex; flex-direction:column; align-items:center; gap:8px;
     cursor:pointer;
   }
@@ -163,7 +159,7 @@ function renderBanner(m){
 
 function nodeHtml(idx, offset){
   if(idx < 0 || idx >= MERGED.length){
-    return `<div class="node empty"></div>`;
+    return `<div class="node empty" data-offset="${offset}"></div>`;
   }
   const m = MERGED[idx];
   const status = statusOf(m);
@@ -190,7 +186,71 @@ function nodeHtml(idx, offset){
   `;
 }
 
-const BUFFER = 16;
+const BUFFER = 22;
+const GAP_PX = 10;
+
+/* ---- Base card width (resolved px value of --card-w) ---- */
+const widthProbe = document.getElementById('widthProbe');
+let baseCardW = 200;
+function updateBaseWidth(){
+  const w = widthProbe.getBoundingClientRect().width;
+  if(w > 0) baseCardW = w;
+}
+function stepPx(){ return baseCardW * 0.62; }
+
+/* ---- dragProgress: single scalar, "how many cards past currentIndex" is in focus right now.
+   Everything (position + size + opacity) is a pure function of this value — no DOM
+   measurement is needed to drive it, which is what keeps it jitter-free. ---- */
+let dragProgress = 0;
+
+function layout(){
+  const nodes = track.children;
+  const n = nodes.length;
+  if(n === 0) return;
+
+  const widths = new Array(n);
+  for(let i = 0; i < n; i++){
+    const k = parseFloat(nodes[i].dataset.offset);
+    const eff = k - dragProgress;
+    const s = Math.max(1 / (1 + 0.55 * Math.abs(eff)), 0.16);
+    widths[i] = Math.max(baseCardW * s, 30);
+  }
+
+  const centers = new Array(n);
+  let x = 0;
+  for(let i = 0; i < n; i++){
+    centers[i] = x + widths[i] / 2;
+    x += widths[i] + GAP_PX;
+  }
+
+  const floorK = Math.floor(dragProgress);
+  const ceilK = Math.ceil(dragProgress);
+  const frac = dragProgress - floorK;
+  const floorIdx = floorK + BUFFER;
+  const ceilIdx = ceilK + BUFFER;
+  let focusCenter;
+  if(floorIdx >= 0 && floorIdx < n && ceilIdx >= 0 && ceilIdx < n){
+    focusCenter = centers[floorIdx] * (1 - frac) + centers[ceilIdx] * frac;
+  } else {
+    const clampedIdx = Math.max(0, Math.min(n - 1, Math.round(dragProgress) + BUFFER));
+    focusCenter = centers[clampedIdx];
+  }
+
+  const shift = stage.clientWidth / 2 - focusCenter;
+
+  for(let i = 0; i < n; i++){
+    const node = nodes[i];
+    const w = widths[i];
+    const leftEdge = centers[i] - w / 2 + shift;
+    node.style.width = w.toFixed(1) + 'px';
+    node.style.transform = `translateX(${leftEdge.toFixed(1)}px)`;
+    const k = parseFloat(node.dataset.offset);
+    const eff = Math.abs(k - dragProgress);
+    node.style.opacity = Math.max(1 - eff * 0.4, 0.15).toFixed(2);
+    node.classList.toggle('is-focused', eff < 0.25);
+    node.classList.toggle('is-compact', eff > 1.4);
+  }
+}
 
 function renderWindow(){
   const offsets = [];
@@ -211,44 +271,9 @@ function renderWindow(){
   nextBtn.disabled = currentIndex >= MERGED.length - 1;
 
   attachViewerRatings();
-  updateScales();
+  dragProgress = 0;
+  layout();
 }
-
-/* ---- Continuous coverflow scaling: recalculated every frame from the track's live position ---- */
-const widthProbe = document.getElementById('widthProbe');
-let baseCardW = 200;
-function updateBaseWidth(){
-  const w = widthProbe.getBoundingClientRect().width;
-  if(w > 0) baseCardW = w;
-}
-window.addEventListener('resize', updateBaseWidth);
-
-function updateScales(){
-  const stageRect = stage.getBoundingClientRect();
-  if(stageRect.width === 0) return;
-  const centerX = stageRect.left + stageRect.width / 2;
-  const maxDist = stageRect.width * 0.62 + 60;
-
-  track.querySelectorAll('.node').forEach(node => {
-    const r = node.getBoundingClientRect();
-    const nodeCenter = r.left + r.width / 2;
-    const dist = Math.abs(nodeCenter - centerX);
-    const t = Math.min(dist / maxDist, 1);
-    const scale = 1 - t * 0.62;
-    const opacity = Math.max(1 - t * 0.85, 0.15);
-
-    node.style.width = Math.max(baseCardW * scale, 40) + 'px';
-    node.style.opacity = opacity.toFixed(2);
-    node.classList.toggle('is-focused', t < 0.2);
-    node.classList.toggle('is-compact', t > 0.5);
-  });
-}
-
-function scaleLoop(){
-  updateScales();
-  requestAnimationFrame(scaleLoop);
-}
-requestAnimationFrame(() => { updateBaseWidth(); scaleLoop(); });
 
 let ratingUnsubs = [];
 function attachViewerRatings(){
@@ -275,97 +300,80 @@ function attachViewerRatings(){
   });
 }
 
-function setCurrent(i){
-  if(i < 0 || i >= MERGED.length || i === currentIndex) return;
+function setCurrentInstant(i){
+  if(i < 0 || i >= MERGED.length) return;
   currentIndex = i;
   renderWindow();
   renderBanner(MERGED[currentIndex]);
 }
 
-let isAnimating = false;
+/* ---- Tweening: animate dragProgress smoothly toward an integer target, then swap content ---- */
+let tweenRAF = null;
+function cancelTween(){
+  if(tweenRAF){ cancelAnimationFrame(tweenRAF); tweenRAF = null; }
+}
 
-function slideOutAndSwap(direction){
-  isAnimating = true;
-  const flyDistance = direction * -(stage.clientWidth * 0.55);
-  track.style.transition = 'transform .26s cubic-bezier(.22,.61,.36,1)';
-  requestAnimationFrame(() => {
-    track.style.transform = `translateX(${flyDistance}px)`;
+function animateProgressTo(target, duration, onDone){
+  cancelTween();
+  const startVal = dragProgress;
+  const startTime = performance.now();
+  function step(now){
+    const elapsed = (now - startTime) / 1000;
+    const t = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    dragProgress = startVal + (target - startVal) * eased;
+    layout();
+    if(t < 1){
+      tweenRAF = requestAnimationFrame(step);
+    } else {
+      tweenRAF = null;
+      if(onDone) onDone();
+    }
+  }
+  tweenRAF = requestAnimationFrame(step);
+}
+
+function commitToOffset(k){
+  const minK = -currentIndex;
+  const maxK = MERGED.length - 1 - currentIndex;
+  k = Math.max(minK, Math.min(maxK, Math.round(k)));
+  const duration = Math.min(0.5, 0.22 + Math.abs(k - dragProgress) * 0.05);
+  animateProgressTo(k, duration, () => {
+    setCurrentInstant(currentIndex + k);
   });
-  track.addEventListener('transitionend', function handler(){
-    track.removeEventListener('transitionend', handler);
-    track.style.transition = 'none';
-    track.style.transform = 'translateX(0px)';
-    setCurrent(currentIndex + direction);
-    isAnimating = false;
-  }, { once: true });
 }
 
-function canMove(direction){
-  return (direction === 1 && currentIndex < MERGED.length - 1) ||
-         (direction === -1 && currentIndex > 0);
-}
-
-function snapBack(){
-  isAnimating = true;
-  track.style.transition = 'transform .22s cubic-bezier(.08,.75,.15,1)';
-  track.style.transform = 'translateX(0px)';
-  track.addEventListener('transitionend', function handler(){
-    track.removeEventListener('transitionend', handler);
-    track.style.transition = 'none';
-    isAnimating = false;
-  }, { once: true });
-}
-
-prevBtn.addEventListener('click', () => { if(!isAnimating && canMove(-1)) slideOutAndSwap(-1); });
-nextBtn.addEventListener('click', () => { if(!isAnimating && canMove(1)) slideOutAndSwap(1); });
+prevBtn.addEventListener('click', () => { if(!tweenRAF && currentIndex > 0) commitToOffset(-1); });
+nextBtn.addEventListener('click', () => { if(!tweenRAF && currentIndex < MERGED.length - 1) commitToOffset(1); });
 
 document.addEventListener('keydown', (e) => {
-  if(isAnimating) return;
-  if(e.key === 'ArrowLeft' && canMove(-1)) slideOutAndSwap(-1);
-  if(e.key === 'ArrowRight' && canMove(1)) slideOutAndSwap(1);
+  if(tweenRAF) return;
+  if(e.key === 'ArrowLeft' && currentIndex > 0) commitToOffset(-1);
+  if(e.key === 'ArrowRight' && currentIndex < MERGED.length - 1) commitToOffset(1);
 });
 
-/* swipe / drag support — carousel follows the pointer live, like spinning a physical wheel */
+/* swipe / drag support — dragProgress follows the pointer live, like spinning a physical wheel */
 let dragStartX = null;
-let dragCurrentDX = 0;
-let dragBaseOffset = 0;
+let dragStartProgress = 0;
 let dragMoved = false;
 let velocitySamples = [];
 
-function getCurrentTranslateX(){
-  const t = getComputedStyle(track).transform;
-  if(!t || t === 'none') return 0;
-  const match = t.match(/matrix\(([^)]+)\)/);
-  if(!match) return 0;
-  const parts = match[1].split(',').map(parseFloat);
-  return parts[4] || 0;
-}
-
 stage.addEventListener('pointerdown', (e) => {
-  if(isAnimating){
-    // interrupt whatever animation is mid-flight and continue smoothly from its current position
-    const liveX = getCurrentTranslateX();
-    track.style.transition = 'none';
-    track.style.transform = `translateX(${liveX}px)`;
-    dragBaseOffset = liveX;
-    isAnimating = false;
-  } else {
-    dragBaseOffset = 0;
-  }
+  cancelTween();
   dragStartX = e.clientX;
-  dragCurrentDX = 0;
+  dragStartProgress = dragProgress;
   dragMoved = false;
   velocitySamples = [{ t: performance.now(), x: e.clientX }];
-  track.style.transition = 'none';
   if(stage.setPointerCapture){
     try{ stage.setPointerCapture(e.pointerId); }catch(err){}
   }
 });
 stage.addEventListener('pointermove', (e) => {
   if(dragStartX === null) return;
-  dragCurrentDX = e.clientX - dragStartX;
-  if(Math.abs(dragCurrentDX) > 10) dragMoved = true;
-  track.style.transform = `translateX(${dragBaseOffset + dragCurrentDX}px)`;
+  const deltaPx = e.clientX - dragStartX;
+  if(Math.abs(deltaPx) > 10) dragMoved = true;
+  dragProgress = dragStartProgress - deltaPx / stepPx();
+  layout();
 
   const now = performance.now();
   velocitySamples.push({ t: now, x: e.clientX });
@@ -373,69 +381,41 @@ stage.addEventListener('pointermove', (e) => {
     velocitySamples.shift();
   }
 });
+
 function finishDrag(){
   if(dragStartX === null) return;
-  const dx = dragBaseOffset + dragCurrentDX;
   dragStartX = null;
 
-  // velocity in px/ms over the last ~80ms of movement, for inertia
-  let velocity = 0;
+  let velocityPx = 0;
   if(velocitySamples.length >= 2){
     const first = velocitySamples[0];
     const last = velocitySamples[velocitySamples.length - 1];
     const dt = last.t - first.t;
-    if(dt > 0) velocity = (last.x - first.x) / dt;
+    if(dt > 0) velocityPx = (last.x - first.x) / dt;
   }
-  const maxExtra = stage.clientWidth * 1.4;
-  const extra = Math.max(-maxExtra, Math.min(maxExtra, velocity * 260));
+  const velocityProgress = -velocityPx / stepPx();
+  const projected = dragProgress + velocityProgress * 220;
 
-  const stageRect = stage.getBoundingClientRect();
-  const centerX = stageRect.left + stageRect.width / 2;
-  const lookupX = centerX - extra;
-
-  let best = null, bestDist = Infinity;
-  track.querySelectorAll('.node[data-index]').forEach(node => {
-    const r = node.getBoundingClientRect();
-    const nodeCenter = r.left + r.width / 2;
-    const dist = Math.abs(nodeCenter - lookupX);
-    if(dist < bestDist){ bestDist = dist; best = node; }
-  });
-
-  const targetIdx = best ? parseInt(best.dataset.index, 10) : currentIndex;
-
-  if(!best || targetIdx === currentIndex){
-    snapBack();
-  } else {
-    const r = best.getBoundingClientRect();
-    const nodeCenter = r.left + r.width / 2;
-    const finalTransform = dx + (centerX - nodeCenter);
-    const duration = Math.min(0.65, 0.24 + Math.abs(extra) / stage.clientWidth * 0.32);
-
-    isAnimating = true;
-    track.style.transition = `transform ${duration.toFixed(2)}s cubic-bezier(.08,.75,.15,1)`;
-    track.style.transform = `translateX(${finalTransform}px)`;
-    track.addEventListener('transitionend', function handler(){
-      track.removeEventListener('transitionend', handler);
-      track.style.transition = 'none';
-      track.style.transform = 'translateX(0px)';
-      setCurrent(targetIdx);
-      isAnimating = false;
-    }, { once: true });
-  }
-
+  commitToOffset(Math.round(projected));
   setTimeout(() => { dragMoved = false; }, 0);
 }
 
 stage.addEventListener('pointerup', finishDrag);
 stage.addEventListener('pointercancel', () => {
+  if(dragStartX === null) return;
   dragStartX = null;
-  snapBack();
+  commitToOffset(Math.round(dragProgress));
 });
 /* safety net: if the button is released outside the window (or the tab loses focus)
    pointerup can be missed entirely — make sure the drag always gets released */
 window.addEventListener('blur', () => { if(dragStartX !== null) finishDrag(); });
 document.addEventListener('pointerup', () => { if(dragStartX !== null) finishDrag(); });
 document.addEventListener('pointerleave', () => { if(dragStartX !== null) finishDrag(); });
+
+window.addEventListener('resize', () => {
+  updateBaseWidth();
+  layout();
+});
 
 initAuth(document.getElementById('authWidget'));
 
@@ -462,6 +442,7 @@ fetch('movies.json')
     if(startIndex === -1) startIndex = 0;
     currentIndex = startIndex;
 
+    updateBaseWidth();
     renderWindow();
     renderBanner(MERGED[currentIndex]);
   })
