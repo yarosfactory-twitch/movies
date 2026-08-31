@@ -261,10 +261,7 @@ function renderWindow(){
     const idx = parseInt(node.dataset.index, 10);
     const m = MERGED[idx];
     if(m.__placeholder) return;
-    node.addEventListener('click', () => {
-      if(dragMoved) return;
-      window.location.href = 'movie.html?id=' + encodeURIComponent(movieId(m));
-    });
+    node.dataset.href = 'movie.html?id=' + encodeURIComponent(movieId(m));
   });
 
   prevBtn.disabled = currentIndex <= 0;
@@ -357,12 +354,14 @@ let dragStartX = null;
 let dragStartProgress = 0;
 let dragMoved = false;
 let velocitySamples = [];
+let pointerDownNode = null;
 
 stage.addEventListener('pointerdown', (e) => {
   cancelTween();
   dragStartX = e.clientX;
   dragStartProgress = dragProgress;
   dragMoved = false;
+  pointerDownNode = e.target.closest('.node[data-href]');
   velocitySamples = [{ t: performance.now(), x: e.clientX }];
   if(stage.setPointerCapture){
     try{ stage.setPointerCapture(e.pointerId); }catch(err){}
@@ -385,6 +384,11 @@ stage.addEventListener('pointermove', (e) => {
 function finishDrag(){
   if(dragStartX === null) return;
   dragStartX = null;
+
+  if(!dragMoved && pointerDownNode){
+    window.location.href = pointerDownNode.dataset.href;
+    return;
+  }
 
   let velocityPx = 0;
   if(velocitySamples.length >= 2){
