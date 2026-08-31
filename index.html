@@ -338,26 +338,35 @@ stage.addEventListener('pointerup', () => {
   const dx = dragCurrentDX;
   dragStartX = null;
 
-  const threshold = 40;
-  if(Math.abs(dx) > threshold){
-    const direction = dx < 0 ? 1 : -1;
-    if(canMove(direction)){
-      isAnimating = true;
-      const flyDistance = direction * -(stage.clientWidth * 0.55);
-      track.style.transition = 'transform .24s cubic-bezier(.22,.61,.36,1)';
-      track.style.transform = `translateX(${flyDistance}px)`;
-      track.addEventListener('transitionend', function handler(){
-        track.removeEventListener('transitionend', handler);
-        track.style.transition = 'none';
-        track.style.transform = 'translateX(0px)';
-        setCurrent(currentIndex + direction);
-        isAnimating = false;
-      }, { once: true });
-    } else {
-      snapBack();
-    }
-  } else {
+  const stageRect = stage.getBoundingClientRect();
+  const centerX = stageRect.left + stageRect.width / 2;
+  let best = null, bestDist = Infinity;
+  track.querySelectorAll('.node[data-index]').forEach(node => {
+    const r = node.getBoundingClientRect();
+    const nodeCenter = r.left + r.width / 2;
+    const dist = Math.abs(nodeCenter - centerX);
+    if(dist < bestDist){ bestDist = dist; best = node; }
+  });
+
+  const targetIdx = best ? parseInt(best.dataset.index, 10) : currentIndex;
+
+  if(!best || targetIdx === currentIndex){
     snapBack();
+  } else {
+    const r = best.getBoundingClientRect();
+    const nodeCenter = r.left + r.width / 2;
+    const finalTransform = dx + (centerX - nodeCenter);
+
+    isAnimating = true;
+    track.style.transition = 'transform .22s cubic-bezier(.22,.61,.36,1)';
+    track.style.transform = `translateX(${finalTransform}px)`;
+    track.addEventListener('transitionend', function handler(){
+      track.removeEventListener('transitionend', handler);
+      track.style.transition = 'none';
+      track.style.transform = 'translateX(0px)';
+      setCurrent(targetIdx);
+      isAnimating = false;
+    }, { once: true });
   }
 
   setTimeout(() => { dragMoved = false; }, 0);
