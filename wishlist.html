@@ -57,15 +57,6 @@
   .wish-info .meta{ font-size:10.5px; color:var(--text-mute); margin-bottom:6px; }
   .wish-info .wanted{ font-size:11px; color:var(--teal); }
 
-  .wish-row{
-    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
-    padding:10px 0; border-bottom:1px solid var(--border);
-  }
-  .wish-row:last-child{ border-bottom:none; }
-  .wish-row .wr-title{ font-size:13.5px; color:var(--text); }
-  .wish-row .wr-title span{ color:var(--text-mute); font-size:11.5px; }
-  .wish-row .wr-by{ font-size:11px; color:var(--teal); white-space:nowrap; }
-
   .publish-link{
     font-size:11px; color:var(--gold-bright); text-decoration:none;
     border-bottom:1px solid var(--border); white-space:nowrap;
@@ -73,7 +64,6 @@
   }
   .publish-link:hover{ border-color:var(--gold-bright); }
   .wish-info .publish-link{ display:inline-block; margin-top:8px; }
-  .wish-row .wr-by strong{ color:var(--gold-bright); }
   .wish-info .wanted strong{ color:var(--gold-bright); }
 
   .pending-item{ border:1px solid var(--border); padding:14px 16px; margin-bottom:12px; }
@@ -134,11 +124,6 @@
 
   <div class="panel">
     <h2>Хочуть подивитись</h2>
-    <div id="approvedList"><div class="empty-mini">Завантаження…</div></div>
-  </div>
-
-  <div class="panel">
-    <h2>Ще хочуть подивитись</h2>
     <div class="wish-grid" id="approvedGrid"></div>
   </div>
 
@@ -153,7 +138,6 @@ const submitPanel = document.getElementById('submitPanel');
 const loginPrompt = document.getElementById('loginPrompt');
 const adminPanel = document.getElementById('adminPanel');
 const pendingList = document.getElementById('pendingList');
-const approvedList = document.getElementById('approvedList');
 const approvedGrid = document.getElementById('approvedGrid');
 const wishInput = document.getElementById('wishInput');
 const wishSubmitBtn = document.getElementById('wishSubmitBtn');
@@ -193,25 +177,16 @@ wishSubmitBtn.addEventListener('click', async () => {
 
 function renderApproved(){
   if(!firebaseReady){
-    approvedList.innerHTML = '<div class="empty-mini">Список тимчасово недоступний.</div>';
-    approvedGrid.innerHTML = '';
+    approvedGrid.innerHTML = '<div class="empty-mini">Список тимчасово недоступний.</div>';
     return;
   }
   db.collection('suggestions').where('status', '==', 'approved')
     .orderBy('createdAt', 'desc')
     .onSnapshot(snap => {
       if(snap.empty){
-        approvedList.innerHTML = '<div class="empty-mini">Поки що порожньо — стань першим, хто запропонує фільм!</div>';
-        approvedGrid.innerHTML = '';
+        approvedGrid.innerHTML = '<div class="empty-mini">Поки що порожньо — стань першим, хто запропонує фільм!</div>';
         return;
       }
-
-      const withPoster = [];
-      const withoutPoster = [];
-      snap.docs.forEach(doc => {
-        const d = { id: doc.id, ...doc.data() };
-        (d.poster ? withPoster : withoutPoster).push(d);
-      });
 
       function publishHref(d){
         return 'add-movie.html?title=' + encodeURIComponent(d.title || '')
@@ -221,35 +196,25 @@ function renderApproved(){
           + '&sid=' + encodeURIComponent(d.id);
       }
 
-      approvedList.innerHTML = withoutPoster.length === 0
-        ? '<div class="empty-mini">Немає.</div>'
-        : withoutPoster.map(d => `
-            <div class="wish-row">
-              <span class="wr-title">${escapeHtml(d.title || '')} <span>${d.year || ''}</span></span>
-              <span class="wr-by">хоче: <strong>${escapeHtml(d.wantedBy || '')}</strong></span>
+      approvedGrid.innerHTML = snap.docs.map(doc => {
+        const d = { id: doc.id, ...doc.data() };
+        const posterInner = d.poster
+          ? `<img src="${escapeHtml(d.poster)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(d.title || '')}</div>'">`
+          : `<div class="no-poster">${escapeHtml(d.title || '')}</div>`;
+        return `
+          <div class="wish-card">
+            <div class="wish-poster">${posterInner}</div>
+            <div class="wish-info">
+              <h3>${escapeHtml(d.title || '')}</h3>
+              <div class="meta">${d.year || ''}</div>
+              <div class="wanted">Хоче переглянути: <strong>${escapeHtml(d.wantedBy || '')}</strong></div>
               ${isOwner ? `<a class="publish-link" href="${publishHref(d)}">Опублікувати →</a>` : ''}
             </div>
-          `).join('');
-
-      approvedGrid.innerHTML = withPoster.length === 0
-        ? '<div class="empty-mini">Немає.</div>'
-        : withPoster.map(d => {
-            const posterInner = `<img src="${escapeHtml(d.poster)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(d.title || '')}</div>'">`;
-            return `
-              <div class="wish-card">
-                <div class="wish-poster">${posterInner}</div>
-                <div class="wish-info">
-                  <h3>${escapeHtml(d.title || '')}</h3>
-                  <div class="meta">${d.year || ''}</div>
-                  <div class="wanted">Хоче переглянути: <strong>${escapeHtml(d.wantedBy || '')}</strong></div>
-                  ${isOwner ? `<a class="publish-link" href="${publishHref(d)}">Опублікувати →</a>` : ''}
-                </div>
-              </div>
+          </div>
         `;
       }).join('');
     }, err => {
-      approvedList.innerHTML = `<div class="empty-mini">Помилка завантаження: ${escapeHtml(err.message)}</div>`;
-      approvedGrid.innerHTML = '';
+      approvedGrid.innerHTML = `<div class="empty-mini">Помилка завантаження: ${escapeHtml(err.message)}</div>`;
     });
 }
 
