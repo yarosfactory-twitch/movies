@@ -120,11 +120,27 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+
+    match /suggestions/{suggestionId} {
+      allow read: if true;
+      allow create: if request.resource.data.status == 'pending'
+                     && request.resource.data.raw is string
+                     && request.resource.data.raw.size() > 0
+                     && request.resource.data.raw.size() < 300
+                     && request.resource.data.submittedBy is string;
+      allow update, delete: if true;
+    }
   }
 }
 ```
 
-Натисни **Publish**. Якщо ти вже налаштовував правила раніше (без `ratingSum`/`ratingCount`) — обов'язково онови й опублікуй їх заново, інакше оцінки глядачів не будуть зберігатись.
+Натисни **Publish**. Якщо ти вже налаштовував правила раніше (без `ratingSum`/`ratingCount` та `suggestions`) — обов'язково онови й опублікуй їх заново.
+
+## Побажання глядачів (`wishlist.html`)
+
+Будь-хто, хто зайшов через Twitch, може на цій сторінці запропонувати фільм — вставивши посилання або написавши назву й рік. Ти (як `yarosfactory`) бачиш там же чергу на модерацію: для кожної пропозиції вводиш назву/рік/постер і тиснеш "Схвалити" (стає видимою всім) або "Видалити".
+
+Схвалені пропозиції без постера показуються простим списком (назва + хто хоче), а з постером — картками. На кожній є кнопка **"Опублікувати →"** (видно тільки тобі) — переносить на `add-movie.html` з уже заповненою назвою, роком і постером (дату й замовника вписуєш сам). Після успішного збереження фільму ця пропозиція сама зникає зі списку побажань.
 
 ### Модерація
 
