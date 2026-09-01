@@ -195,7 +195,7 @@ function renderAuthWidget(container){
       <div class="auth-widget">
         <span class="auth-name">👋 ${escapeHtml(user.display_name)}</span>
         <a href="my-orders.html">Мої замовлення</a>
-        <a href="wishlist.html">Побажання</a>
+        <a href="my-wishlist.html">Моє бажане</a>
         ${ownerLink}
         <button type="button" class="auth-logout" onclick="twitchLogout()">Вийти</button>
       </div>
