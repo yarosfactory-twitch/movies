@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Рейтинг замовників — yarosfactory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap{ max-width:680px; padding:56px 20px 90px; }
+  header{ margin-bottom:36px; }
+  h1{ font-size:clamp(28px, 4.5vw, 40px); margin-bottom:10px; }
+
+  .board{ margin-top:36px; display:flex; flex-direction:column; gap:10px; }
+
+  .rank-row{
+    display:flex; align-items:center; gap:16px;
+    background:var(--panel); border:1px solid var(--border); padding:14px 18px;
+    position:relative;
+  }
+  .rank-num{
+    font-family:'Spectral', serif; font-weight:700; font-size:18px; color:var(--text-mute);
+    width:34px; text-align:center; flex:0 0 auto;
+  }
+  .rank-name{ flex:1; font-size:15px; color:var(--text); }
+  .rank-name a{ color:inherit; text-decoration:none; border-bottom:1px solid transparent; transition:border-color .15s, color .15s; }
+  .rank-name a:hover{ color:var(--gold-bright); border-color:var(--gold-bright); }
+  .rank-count{ font-size:13px; color:var(--text-mute); flex:0 0 auto; white-space:nowrap; }
+  .rank-count strong{ color:var(--gold-bright); font-size:15px; }
+
+  .rank-row.top1{ border-color:var(--gold-bright); box-shadow:0 0 24px rgba(224,187,125,0.18); }
+  .rank-row.top1 .rank-num{ color:var(--gold-bright); font-size:22px; }
+  .rank-row.top1 .rank-name{ font-weight:600; font-size:16px; }
+
+  .rank-row.top2{ border-color:#c9c9d1; }
+  .rank-row.top2 .rank-num{ color:#c9c9d1; font-size:20px; }
+
+  .rank-row.top3{ border-color:#b8804f; }
+  .rank-row.top3 .rank-num{ color:#b8804f; font-size:20px; }
+
+  .medal{ font-size:18px; flex:0 0 auto; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">yarosfactory · ярос</div>
+    <h1>Рейтинг замовників</h1>
+    <p class="sub">Хто найбільше приніс фільмів на канал — за кількістю замовлень.</p>
+    <nav class="pagenav">
+      <a href="wishlist.html">← Побажання</a>
+      <a href="archive.html">Архів</a>
+      <a href="index.html">Сьогодні дивимось</a>
+      <a href="calendar.html">Календар →</a>
+    </nav>
+    <div id="authWidget"></div>
+  </header>
+
+  <div class="board" id="board"><div class="empty-mini">Завантаження…</div></div>
+
+  <footer>оновлюється вручну · movies.json</footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="common.js"></script>
+<script>
+const board = document.getElementById('board');
+
+function medalFor(rank){
+  if(rank === 1) return '🥇';
+  if(rank === 2) return '🥈';
+  if(rank === 3) return '🥉';
+  return '';
+}
+
+fetch('movies.json')
+  .then(res => {
+    if(!res.ok) throw new Error('Не вдалося завантажити movies.json');
+    return res.json();
+  })
+  .then(data => {
+    const list = Array.isArray(data) ? data : [];
+    const today = new Date(); today.setHours(0,0,0,0);
+    const counts = {};
+
+    list.forEach(m => {
+      if(!m.orderedBy) return;
+      const d = new Date(m.watched);
+      if(isNaN(d) || d > today) return; // only movies actually watched (or today), not future-planned ones
+      const key = m.orderedBy.trim();
+      if(!key) return;
+      counts[key] = (counts[key] || 0) + 1;
+    });
+
+    const ranked = Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+    if(ranked.length === 0){
+      board.innerHTML = '<div class="empty-mini">Ще немає жодного замовлення з іменем замовника.</div>';
+      return;
+    }
+
+    board.innerHTML = ranked.map((r, i) => {
+      const rank = i + 1;
+      const tierClass = rank <= 3 ? ` top${rank}` : '';
+      return `
+        <div class="rank-row${tierClass}">
+          <div class="rank-num">${rank}</div>
+          <div class="rank-name"><a href="https://www.twitch.tv/${encodeURIComponent(r.name)}" target="_blank" rel="noopener">${escapeHtml(r.name)}</a></div>
+          <span class="medal">${medalFor(rank)}</span>
+          <div class="rank-count"><strong>${r.count}</strong> ${r.count === 1 ? 'фільм' : (r.count < 5 ? 'фільми' : 'фільмів')}</div>
+        </div>
+      `;
+    }).join('');
+  })
+  .catch(err => {
+    board.innerHTML = `<div class="empty-mini">Не вдалося завантажити список.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
+  });
+
+initAuth(document.getElementById('authWidget'));
+</script>
+
+</body>
+</html>
