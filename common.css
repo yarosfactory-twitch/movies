@@ -170,6 +170,33 @@ h1{
 .comments-empty{ font-size:13px; color:var(--text-mute); text-align:center; padding:14px 0; }
 .comments-loading{ font-size:12px; color:var(--text-mute); text-align:center; padding:10px 0; }
 
+.empty-mini{ font-size:13px; color:var(--text-mute); text-align:center; padding:20px 0; }
+
+/* ---------- Wishlist cards (wishlist.html, my-wishlist.html) ---------- */
+.wish-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:18px 14px; }
+.wish-card{ background:var(--panel); border:1px solid var(--border); overflow:hidden; }
+.wish-poster{
+  aspect-ratio:2/3; background:var(--panel-2) center/cover no-repeat; position:relative;
+}
+.wish-poster img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.wish-poster .no-poster{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  text-align:center; padding:10px; font-family:'Spectral', serif; font-size:13px; color:var(--text-mute);
+}
+.wish-info{ padding:10px 12px 12px; }
+.wish-info h3{ font-family:'Spectral', serif; font-weight:600; font-size:13.5px; color:var(--text); margin:0 0 4px; line-height:1.3; }
+.wish-info .meta{ font-size:10.5px; color:var(--text-mute); margin-bottom:6px; }
+.wish-info .wanted{ font-size:11px; color:var(--teal); }
+.wish-info .wanted strong{ color:var(--gold-bright); }
+
+.publish-link{
+  font-size:11px; color:var(--gold-bright); text-decoration:none;
+  border-bottom:1px solid var(--border); white-space:nowrap;
+  transition:border-color .15s;
+}
+.publish-link:hover{ border-color:var(--gold-bright); }
+.wish-info .publish-link{ display:inline-block; margin-top:8px; }
+
 footer{ text-align:center; margin-top:60px; color:var(--text-mute); font-size:12px; letter-spacing:0.05em; }
 
 /* ---------- Poster grid (archive, my-orders) ---------- */
