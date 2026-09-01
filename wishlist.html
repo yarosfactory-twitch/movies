@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Побажання — yarosfactory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap{ max-width:920px; padding:56px 20px 90px; }
+  header{ margin-bottom:32px; }
+  h1{ font-size:clamp(28px, 4.5vw, 40px); margin-bottom:10px; }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--border); padding:24px; margin-bottom:26px; position:relative;
+  }
+  .panel::before, .panel::after{ content:""; position:absolute; width:16px; height:16px; opacity:0.8; }
+  .panel::before{ top:8px; left:8px; border-top:1px solid var(--gold); border-left:1px solid var(--gold); }
+  .panel::after{ bottom:8px; right:8px; border-bottom:1px solid var(--gold); border-right:1px solid var(--gold); }
+  .panel h2{ font-family:'Spectral', serif; font-weight:600; font-size:16px; color:var(--gold-bright); margin:0 0 14px; }
+
+  #submitPanel label{ display:block; font-size:11px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-mute); margin-bottom:6px; }
+  #submitPanel .row{ display:flex; gap:10px; }
+  #submitPanel input{
+    flex:1; background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    padding:10px 12px; font-family:'Golos Text', sans-serif; font-size:13.5px; outline:none; transition:border-color .2s;
+  }
+  #submitPanel input:focus{ border-color:var(--gold); }
+  #submitPanel button{
+    flex:0 0 auto; background:var(--gold); border:1px solid var(--gold); color:#1b1610;
+    padding:0 20px; font-size:13px; font-weight:600; letter-spacing:0.03em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s;
+  }
+  #submitPanel button:hover{ background:var(--gold-bright); }
+  #submitPanel button:disabled{ opacity:0.5; cursor:default; }
+  .hint{ font-size:11px; color:var(--text-mute); margin-top:8px; }
+  .submit-status{ margin-top:12px; padding:10px 12px; font-size:13px; display:none; }
+  .submit-status.show{ display:block; }
+  .submit-status.ok{ border:1px solid rgba(83,116,104,0.5); color:var(--teal); background:rgba(83,116,104,0.08); }
+  .submit-status.err{ border:1px solid #8a4a3d; color:#c98a7a; background:rgba(138,74,61,0.08); }
+
+  .wish-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:18px 14px; }
+  .wish-card{ background:var(--panel); border:1px solid var(--border); overflow:hidden; }
+  .wish-poster{
+    aspect-ratio:2/3; background:var(--panel-2) center/cover no-repeat; position:relative;
+  }
+  .wish-poster img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .wish-poster .no-poster{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:10px; font-family:'Spectral', serif; font-size:13px; color:var(--text-mute);
+  }
+  .wish-info{ padding:10px 12px 12px; }
+  .wish-info h3{ font-family:'Spectral', serif; font-weight:600; font-size:13.5px; color:var(--text); margin:0 0 4px; line-height:1.3; }
+  .wish-info .meta{ font-size:10.5px; color:var(--text-mute); margin-bottom:6px; }
+  .wish-info .wanted{ font-size:11px; color:var(--teal); }
+
+  .wish-row{
+    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+    padding:10px 0; border-bottom:1px solid var(--border);
+  }
+  .wish-row:last-child{ border-bottom:none; }
+  .wish-row .wr-title{ font-size:13.5px; color:var(--text); }
+  .wish-row .wr-title span{ color:var(--text-mute); font-size:11.5px; }
+  .wish-row .wr-by{ font-size:11px; color:var(--teal); white-space:nowrap; }
+
+  .publish-link{
+    font-size:11px; color:var(--gold-bright); text-decoration:none;
+    border-bottom:1px solid var(--border); white-space:nowrap;
+    transition:border-color .15s;
+  }
+  .publish-link:hover{ border-color:var(--gold-bright); }
+  .wish-info .publish-link{ display:inline-block; margin-top:8px; }
+  .wish-row .wr-by strong{ color:var(--gold-bright); }
+  .wish-info .wanted strong{ color:var(--gold-bright); }
+
+  .pending-item{ border:1px solid var(--border); padding:14px 16px; margin-bottom:12px; }
+  .pending-item .raw{ font-size:13.5px; color:var(--text); margin-bottom:4px; word-break:break-word; }
+  .pending-item .meta{ font-size:11px; color:var(--text-mute); margin-bottom:12px; }
+  .pending-form{ display:grid; grid-template-columns:1fr 90px 1fr; gap:8px; margin-bottom:10px; }
+  .pending-form input{
+    background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    padding:8px 10px; font-family:'Golos Text', sans-serif; font-size:12.5px; outline:none;
+  }
+  .pending-actions{ display:flex; gap:8px; }
+  .pending-actions button{
+    padding:8px 16px; font-size:12px; letter-spacing:0.03em; text-transform:uppercase; cursor:pointer; font-family:inherit;
+  }
+  .btn-approve{ background:var(--gold); border:1px solid var(--gold); color:#1b1610; }
+  .btn-approve:hover{ background:var(--gold-bright); }
+  .btn-reject{ background:none; border:1px solid #8a4a3d; color:#c98a7a; }
+  .btn-reject:hover{ background:#8a4a3d; color:var(--text); }
+
+  .empty-mini{ font-size:13px; color:var(--text-mute); text-align:center; padding:20px 0; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">yarosfactory · ярос</div>
+    <h1>Побажання глядачів</h1>
+    <p class="sub">Фільми, які хочуть подивитись на стрімі, але ще не замовлені. Надихнись і зроби своє замовлення на стрімі!</p>
+    <nav class="pagenav">
+      <a href="index.html">← Сьогодні дивимось</a>
+      <a href="archive.html">Архів</a>
+      <a href="calendar.html">Календар →</a>
+    </nav>
+    <div id="authWidget"></div>
+  </header>
+
+  <div class="panel" id="submitPanel" style="display:none;">
+    <h2>Запропонувати фільм</h2>
+    <label for="wishInput">Посилання на фільм, або назва і рік</label>
+    <div class="row">
+      <input type="text" id="wishInput" placeholder="https://... або Назва фільму, 2024" maxlength="300">
+      <button type="button" id="wishSubmitBtn">Запропонувати</button>
+    </div>
+    <p class="hint">Ярос переглядає кожну пропозицію вручну — якщо схвалить, вона з'явиться нижче для всіх.</p>
+    <div class="submit-status" id="wishStatus"></div>
+  </div>
+
+  <div class="panel" id="loginPrompt">
+    <h2>Запропонувати фільм</h2>
+    <p class="hint" style="margin-top:0;">Спочатку увійди через Twitch (кнопка вгорі сторінки), щоб залишити пропозицію.</p>
+  </div>
+
+  <div class="panel" id="adminPanel" style="display:none;">
+    <h2>На модерації</h2>
+    <div id="pendingList"><div class="empty-mini">Завантаження…</div></div>
+  </div>
+
+  <div class="panel">
+    <h2>Хочуть подивитись</h2>
+    <div id="approvedList"><div class="empty-mini">Завантаження…</div></div>
+  </div>
+
+  <div class="panel">
+    <h2>Ще хочуть подивитись</h2>
+    <div class="wish-grid" id="approvedGrid"></div>
+  </div>
+
+  <footer>оновлюється вручну · movies.json</footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="common.js"></script>
+<script>
+const submitPanel = document.getElementById('submitPanel');
+const loginPrompt = document.getElementById('loginPrompt');
+const adminPanel = document.getElementById('adminPanel');
+const pendingList = document.getElementById('pendingList');
+const approvedList = document.getElementById('approvedList');
+const approvedGrid = document.getElementById('approvedGrid');
+const wishInput = document.getElementById('wishInput');
+const wishSubmitBtn = document.getElementById('wishSubmitBtn');
+const wishStatus = document.getElementById('wishStatus');
+
+let isOwner = false;
+let currentUser = null;
+
+function showWishStatus(kind, text){
+  wishStatus.className = 'submit-status show ' + kind;
+  wishStatus.textContent = text;
+}
+
+wishSubmitBtn.addEventListener('click', async () => {
+  const raw = wishInput.value.trim();
+  if(!raw){
+    showWishStatus('err', 'Встав посилання або напиши назву фільму.');
+    return;
+  }
+  wishSubmitBtn.disabled = true;
+  try{
+    await db.collection('suggestions').add({
+      raw: raw.slice(0, 300),
+      submittedBy: currentUser.login,
+      submittedByName: currentUser.display_name,
+      status: 'pending',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    wishInput.value = '';
+    showWishStatus('ok', 'Дякуємо! Пропозицію надіслано на модерацію.');
+  }catch(err){
+    showWishStatus('err', 'Не вдалося надіслати: ' + err.message);
+  }finally{
+    wishSubmitBtn.disabled = false;
+  }
+});
+
+function renderApproved(){
+  if(!firebaseReady){
+    approvedList.innerHTML = '<div class="empty-mini">Список тимчасово недоступний.</div>';
+    approvedGrid.innerHTML = '';
+    return;
+  }
+  db.collection('suggestions').where('status', '==', 'approved')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snap => {
+      if(snap.empty){
+        approvedList.innerHTML = '<div class="empty-mini">Поки що порожньо — стань першим, хто запропонує фільм!</div>';
+        approvedGrid.innerHTML = '';
+        return;
+      }
+
+      const withPoster = [];
+      const withoutPoster = [];
+      snap.docs.forEach(doc => {
+        const d = { id: doc.id, ...doc.data() };
+        (d.poster ? withPoster : withoutPoster).push(d);
+      });
+
+      function publishHref(d){
+        return 'add-movie.html?title=' + encodeURIComponent(d.title || '')
+          + '&year=' + encodeURIComponent(d.year || '')
+          + '&poster=' + encodeURIComponent(d.poster || '')
+          + '&wanted=' + encodeURIComponent(d.wantedBy || '')
+          + '&sid=' + encodeURIComponent(d.id);
+      }
+
+      approvedList.innerHTML = withoutPoster.length === 0
+        ? '<div class="empty-mini">Немає.</div>'
+        : withoutPoster.map(d => `
+            <div class="wish-row">
+              <span class="wr-title">${escapeHtml(d.title || '')} <span>${d.year || ''}</span></span>
+              <span class="wr-by">хоче: <strong>${escapeHtml(d.wantedBy || '')}</strong></span>
+              ${isOwner ? `<a class="publish-link" href="${publishHref(d)}">Опублікувати →</a>` : ''}
+            </div>
+          `).join('');
+
+      approvedGrid.innerHTML = withPoster.length === 0
+        ? '<div class="empty-mini">Немає.</div>'
+        : withPoster.map(d => {
+            const posterInner = `<img src="${escapeHtml(d.poster)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(d.title || '')}</div>'">`;
+            return `
+              <div class="wish-card">
+                <div class="wish-poster">${posterInner}</div>
+                <div class="wish-info">
+                  <h3>${escapeHtml(d.title || '')}</h3>
+                  <div class="meta">${d.year || ''}</div>
+                  <div class="wanted">Хоче переглянути: <strong>${escapeHtml(d.wantedBy || '')}</strong></div>
+                  ${isOwner ? `<a class="publish-link" href="${publishHref(d)}">Опублікувати →</a>` : ''}
+                </div>
+              </div>
+        `;
+      }).join('');
+    }, err => {
+      approvedList.innerHTML = `<div class="empty-mini">Помилка завантаження: ${escapeHtml(err.message)}</div>`;
+      approvedGrid.innerHTML = '';
+    });
+}
+
+function renderPending(){
+  if(!firebaseReady) return;
+  db.collection('suggestions').where('status', '==', 'pending')
+    .orderBy('createdAt', 'asc')
+    .onSnapshot(snap => {
+      if(snap.empty){
+        pendingList.innerHTML = '<div class="empty-mini">Нічого немає на модерації.</div>';
+        return;
+      }
+      pendingList.innerHTML = snap.docs.map(doc => {
+        const d = doc.data();
+        const dateStr = d.createdAt && d.createdAt.toDate ? fmtDateShort(d.createdAt.toDate()) : '';
+        return `
+          <div class="pending-item" data-id="${doc.id}">
+            <div class="raw">${escapeHtml(d.raw || '')}</div>
+            <div class="meta">від ${escapeHtml(d.submittedByName || d.submittedBy || 'глядача')} · ${dateStr}</div>
+            <div class="pending-form">
+              <input type="text" class="p-title" placeholder="Назва" value="${escapeHtml(guessTitle(d.raw))}">
+              <input type="text" class="p-year" placeholder="Рік">
+              <input type="text" class="p-poster" placeholder="Посилання на постер (необов'язково)">
+            </div>
+            <div class="pending-actions">
+              <button type="button" class="btn-approve">Схвалити</button>
+              <button type="button" class="btn-reject">Видалити</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      pendingList.querySelectorAll('.pending-item').forEach(item => {
+        const id = item.dataset.id;
+        item.querySelector('.btn-approve').addEventListener('click', async () => {
+          const title = item.querySelector('.p-title').value.trim();
+          const year = item.querySelector('.p-year').value.trim();
+          const poster = item.querySelector('.p-poster').value.trim();
+          if(!title){ alert('Вкажи хоча б назву фільму.'); return; }
+          const docSnap = await db.collection('suggestions').doc(id).get();
+          const data = docSnap.data();
+          await db.collection('suggestions').doc(id).update({
+            status: 'approved',
+            title,
+            year: year ? parseInt(year, 10) : null,
+            poster: poster || '',
+            wantedBy: data.submittedByName || data.submittedBy || 'глядач'
+          });
+        });
+        item.querySelector('.btn-reject').addEventListener('click', async () => {
+          await db.collection('suggestions').doc(id).delete();
+        });
+      });
+    }, err => {
+      pendingList.innerHTML = `<div class="empty-mini">Помилка завантаження: ${escapeHtml(err.message)}</div>`;
+    });
+}
+
+function guessTitle(raw){
+  if(!raw) return '';
+  if(/^https?:\/\//i.test(raw.trim())) return '';
+  return raw.split(',')[0].trim();
+}
+
+async function init(){
+  await initAuth(document.getElementById('authWidget'));
+  currentUser = getTwitchUser();
+  isOwner = !!(currentUser && currentUser.login === TWITCH_OWNER_LOGIN);
+
+  if(currentUser){
+    submitPanel.style.display = '';
+    loginPrompt.style.display = 'none';
+  } else {
+    submitPanel.style.display = 'none';
+    loginPrompt.style.display = '';
+  }
+
+  if(isOwner){
+    adminPanel.style.display = '';
+    renderPending();
+  }
+
+  renderApproved();
+}
+
+init();
+</script>
+
+</body>
+</html>
