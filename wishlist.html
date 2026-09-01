@@ -42,30 +42,6 @@
   .submit-status.ok{ border:1px solid rgba(83,116,104,0.5); color:var(--teal); background:rgba(83,116,104,0.08); }
   .submit-status.err{ border:1px solid #8a4a3d; color:#c98a7a; background:rgba(138,74,61,0.08); }
 
-  .wish-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:18px 14px; }
-  .wish-card{ background:var(--panel); border:1px solid var(--border); overflow:hidden; }
-  .wish-poster{
-    aspect-ratio:2/3; background:var(--panel-2) center/cover no-repeat; position:relative;
-  }
-  .wish-poster img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-  .wish-poster .no-poster{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    text-align:center; padding:10px; font-family:'Spectral', serif; font-size:13px; color:var(--text-mute);
-  }
-  .wish-info{ padding:10px 12px 12px; }
-  .wish-info h3{ font-family:'Spectral', serif; font-weight:600; font-size:13.5px; color:var(--text); margin:0 0 4px; line-height:1.3; }
-  .wish-info .meta{ font-size:10.5px; color:var(--text-mute); margin-bottom:6px; }
-  .wish-info .wanted{ font-size:11px; color:var(--teal); }
-
-  .publish-link{
-    font-size:11px; color:var(--gold-bright); text-decoration:none;
-    border-bottom:1px solid var(--border); white-space:nowrap;
-    transition:border-color .15s;
-  }
-  .publish-link:hover{ border-color:var(--gold-bright); }
-  .wish-info .publish-link{ display:inline-block; margin-top:8px; }
-  .wish-info .wanted strong{ color:var(--gold-bright); }
-
   .pending-item{ border:1px solid var(--border); padding:14px 16px; margin-bottom:12px; }
   .pending-item .raw{ font-size:13.5px; color:var(--text); margin-bottom:4px; word-break:break-word; }
   .pending-item .meta{ font-size:11px; color:var(--text-mute); margin-bottom:12px; }
@@ -82,8 +58,6 @@
   .btn-approve:hover{ background:var(--gold-bright); }
   .btn-reject{ background:none; border:1px solid #8a4a3d; color:#c98a7a; }
   .btn-reject:hover{ background:#8a4a3d; color:var(--text); }
-
-  .empty-mini{ font-size:13px; color:var(--text-mute); text-align:center; padding:20px 0; }
 </style>
 </head>
 <body>
