@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Моє бажане — yarosfactory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap{ max-width:980px; padding:64px 24px 96px; }
+  header{ margin-bottom:48px; }
+  h1{ font-size:clamp(28px, 4.5vw, 44px); margin-bottom:14px; }
+  .sub{ font-size:14.5px; max-width:520px; }
+  .wish-grid{ margin-top:36px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">yarosfactory · ярос</div>
+    <h1>Моє бажане</h1>
+    <p class="sub">Фільми, які ти запропонував(ла) і які вже схвалено.</p>
+    <nav class="pagenav">
+      <a href="index.html">← Сьогодні дивимось</a>
+      <a href="archive.html">Архів</a>
+      <a href="calendar.html">Календар</a>
+      <a href="wishlist.html">Побажання →</a>
+    </nav>
+    <div id="authWidget"></div>
+  </header>
+
+  <div class="wish-grid" id="grid"><div class="empty-mini">Завантаження…</div></div>
+
+  <footer>оновлюється вручну · movies.json</footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="common.js"></script>
+<script>
+const grid = document.getElementById('grid');
+
+function renderCards(items){
+  if(items.length === 0){
+    grid.innerHTML = '<div class="empty-mini">Тут поки нічого немає — ще не пропонував(ла) фільмів, або жоден ще не схвалено.</div>';
+    return;
+  }
+  grid.innerHTML = items.map(d => {
+    const posterInner = d.poster
+      ? `<img src="${escapeHtml(d.poster)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(d.title || '')}</div>'">`
+      : `<div class="no-poster">${escapeHtml(d.title || '')}</div>`;
+    return `
+      <div class="wish-card">
+        <div class="wish-poster">${posterInner}</div>
+        <div class="wish-info">
+          <h3>${escapeHtml(d.title || '')}</h3>
+          <div class="meta">${d.year || ''}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function init(){
+  const authWidget = document.getElementById('authWidget');
+  await initAuth(authWidget);
+
+  const user = getTwitchUser();
+  if(!user){
+    grid.innerHTML = `<div class="empty-mini">Спочатку увійди через Twitch — кнопка вгорі сторінки.</div>`;
+    return;
+  }
+
+  if(!firebaseReady){
+    grid.innerHTML = '<div class="empty-mini">Список тимчасово недоступний.</div>';
+    return;
+  }
+
+  try{
+    const snap = await db.collection('suggestions').where('status', '==', 'approved').get();
+    const mine = snap.docs
+      .map(doc => doc.data())
+      .filter(d => (d.submittedBy || '').toLowerCase() === user.login.toLowerCase());
+    renderCards(mine);
+  }catch(err){
+    grid.innerHTML = `<div class="empty-mini">Не вдалося завантажити список.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>
