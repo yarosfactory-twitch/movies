@@ -268,6 +268,38 @@ fetch('movies.json')
   })
   .catch(() => {});
 
+// prefill from a wishlist "Опублікувати" link (title/year/poster only — date and замовник stay empty on purpose)
+let usedSuggestionId = null;
+
+(function prefillFromWishlist(){
+  const params = new URLSearchParams(window.location.search);
+  const title = params.get('title');
+  if(!title) return;
+  document.getElementById('fTitle').value = title;
+  if(params.get('year')) document.getElementById('fYear').value = params.get('year');
+  if(params.get('poster')) document.getElementById('fPoster').value = params.get('poster');
+  if(params.get('sid')) usedSuggestionId = params.get('sid');
+  document.getElementById('fWatched').focus();
+})();
+
+async function cleanupUsedSuggestion(finalTitle){
+  if(!(typeof firebaseReady !== 'undefined' && firebaseReady)) return;
+  try{
+    if(usedSuggestionId){
+      await db.collection('suggestions').doc(usedSuggestionId).delete();
+    } else {
+      // fallback: exact title match against any approved suggestion
+      const snap = await db.collection('suggestions').where('status', '==', 'approved').where('title', '==', finalTitle).get();
+      const batch = [];
+      snap.forEach(doc => batch.push(db.collection('suggestions').doc(doc.id).delete()));
+      await Promise.all(batch);
+    }
+  }catch(err){
+    console.warn('Не вдалося прибрати побажання зі списку:', err.message);
+  }
+  usedSuggestionId = null;
+}
+
 function showStatus(kind, html){
   statusBox.className = 'status show ' + kind;
   statusBox.innerHTML = html;
@@ -469,6 +501,8 @@ form.addEventListener('submit', async (e) => {
   try{
     const newContent = await commitMovieWithRetry(apiUrl, headers, branch, movie, title);
     showStatus('ok', `«${title}» додано! Сайт оновиться протягом хвилини — <a href="movie.html?id=${encodeURIComponent(slugify(title))}" target="_blank">перевірити сторінку фільму →</a>`);
+
+    await cleanupUsedSuggestion(title);
 
     if(document.getElementById('alsoTelegram').checked){
       await publishToTelegram({ title, yearVal, watched, genreVal, poster, orderedBy, episodes });
