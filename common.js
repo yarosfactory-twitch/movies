@@ -259,29 +259,38 @@ function renderViewerRating(container, movie){
     const data = snap.exists ? snap.data() : {};
     const sum = data.ratingSum || 0;
     const count = data.ratingCount || 0;
+    const rawAvg = count > 0 ? sum / count : 0;
+    const avg = Math.min(10, Math.max(1, rawAvg)); // захист від зіпсованих старих даних
     avgEl.textContent = count > 0
-      ? `${(sum / count).toFixed(1)} / 10 · ${count} ${count === 1 ? 'оцінка' : 'оцінок'}`
+      ? `${avg.toFixed(1)} / 10 · ${count} ${count === 1 ? 'оцінка' : 'оцінок'}`
       : 'Ще немає оцінок';
   }, err => console.warn('Помилка Firestore (rating):', err.message));
 
+  let isSaving = false;
+
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
-      const newVal = parseInt(btn.dataset.val, 10);
+      if(isSaving) return;
+      const newVal = Math.min(10, Math.max(1, parseInt(btn.dataset.val, 10) || 0));
       if(confirmed && newVal === myRating) return;
       const wasConfirmed = confirmed;
-      const oldVal = wasConfirmed ? myRating : 0;
+      const oldVal = wasConfirmed ? Math.min(10, Math.max(0, myRating || 0)) : 0;
 
+      isSaving = true;
       paint(newVal);
       hintEl.textContent = 'Зберігаю…';
-      btn.disabled = true;
+      buttons.forEach(b => b.disabled = true);
 
       db.runTransaction(tx => {
         return tx.get(docRef).then(snap => {
           const data = snap.exists ? snap.data() : {};
           const sum = data.ratingSum || 0;
           const count = data.ratingCount || 0;
-          const newSum = wasConfirmed ? (sum - oldVal + newVal) : (sum + newVal);
-          const newCount = wasConfirmed ? count : count + 1;
+          let newSum = wasConfirmed ? (sum - oldVal + newVal) : (sum + newVal);
+          let newCount = wasConfirmed ? count : count + 1;
+          // захист: сума й кількість ніколи не можуть бути від'ємними, а середнє — виходити за межі 1-10
+          newCount = Math.max(0, newCount);
+          newSum = Math.max(0, Math.min(newSum, newCount * 10));
           tx.set(docRef, { ratingSum: newSum, ratingCount: newCount }, { merge: true });
         });
       }).then(() => {
@@ -294,8 +303,12 @@ function renderViewerRating(container, movie){
         console.warn('Не вдалося зберегти оцінку:', err.message);
         paint(wasConfirmed ? myRating : 0);
         hintEl.textContent = 'Не вдалося зберегти — спробуй ще раз.';
-      }).finally(() => {
-        btn.disabled = false;
+      }).then(() => {
+        // короткий кулдаун після кожної спроби — захист від автоклікерів і випадкових подвійних кліків
+        setTimeout(() => {
+          buttons.forEach(b => b.disabled = false);
+          isSaving = false;
+        }, 2500);
       });
     });
   });
