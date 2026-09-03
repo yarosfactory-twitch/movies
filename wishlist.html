@@ -416,6 +416,7 @@ function renderApproved(){
           + '&genre=' + encodeURIComponent((d.genre || []).join(', '))
           + '&note=' + encodeURIComponent(d.note || '')
           + '&wanted=' + encodeURIComponent(d.wantedBy || '')
+          + '&tmdbId=' + encodeURIComponent(d.tmdbId || '')
           + '&sid=' + encodeURIComponent(d.id);
       }
 
@@ -573,6 +574,23 @@ async function init(){
   }
 
   renderApproved();
+
+  // прийшли з "Схожі фільми" на сторінці фільму — одразу підставляємо обраний фільм
+  if(currentUser){
+    const params = new URLSearchParams(window.location.search);
+    const preTitle = params.get('title');
+    if(preTitle){
+      selectedMovie = {
+        id: params.get('tmdbId') ? parseInt(params.get('tmdbId'), 10) : null,
+        title: preTitle,
+        year: params.get('year') ? parseInt(params.get('year'), 10) : null,
+        poster: params.get('poster') || ''
+      };
+      renderSelected();
+      updateSubmitEnabled();
+      submitPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
 }
 
 init();
