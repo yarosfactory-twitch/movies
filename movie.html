@@ -69,7 +69,13 @@
 
   .similar-wrap{ max-width:880px; margin:30px auto 0; }
   .similar-wrap h3{ font-family:'Spectral', serif; font-weight:600; font-size:16px; color:var(--gold-bright); margin:0 0 14px; }
-  .similar-strip{ display:flex; gap:14px; overflow-x:auto; padding-bottom:6px; }
+  .similar-strip{
+    display:flex; gap:14px; overflow-x:auto; padding-bottom:6px;
+    cursor:grab; user-select:none; scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .similar-strip::-webkit-scrollbar{ display:none; }
+  .similar-strip.dragging{ cursor:grabbing; }
+  .similar-strip img{ -webkit-user-drag:none; user-drag:none; pointer-events:none; }
   .similar-card{ flex:0 0 auto; width:130px; background:var(--panel); border:1px solid var(--border); }
   .similar-card .poster{ aspect-ratio:2/3; background:var(--panel-2) center/cover no-repeat; position:relative; }
   .similar-card .poster img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
@@ -235,6 +241,78 @@ function renderMovie(m){
 const trailerBlock = document.getElementById('trailerBlock');
 const similarBlock = document.getElementById('similarBlock');
 
+function setupDragScroll(el){
+  if(!el) return;
+  let isDown = false;
+  let startX = 0;
+  let startScroll = 0;
+  let moved = false;
+  let velocity = 0;
+  let lastX = 0;
+  let lastT = 0;
+  let momentumRAF = null;
+
+  function stopMomentum(){
+    if(momentumRAF) cancelAnimationFrame(momentumRAF);
+    momentumRAF = null;
+  }
+
+  el.addEventListener('pointerdown', (e) => {
+    stopMomentum();
+    isDown = true;
+    moved = false;
+    startX = e.clientX;
+    startScroll = el.scrollLeft;
+    lastX = e.clientX;
+    lastT = performance.now();
+    velocity = 0;
+    el.classList.add('dragging');
+    try{ el.setPointerCapture(e.pointerId); }catch(err){}
+  });
+
+  el.addEventListener('pointermove', (e) => {
+    if(!isDown) return;
+    const dx = e.clientX - startX;
+    if(Math.abs(dx) > 6) moved = true;
+    el.scrollLeft = startScroll - dx;
+
+    const now = performance.now();
+    const dt = now - lastT;
+    if(dt > 0){
+      velocity = (e.clientX - lastX) / dt;
+      lastX = e.clientX;
+      lastT = now;
+    }
+  });
+
+  function endDrag(){
+    if(!isDown) return;
+    isDown = false;
+    el.classList.remove('dragging');
+    // невелика інерція після відпускання
+    let v = velocity;
+    function step(){
+      if(Math.abs(v) < 0.02){ momentumRAF = null; return; }
+      el.scrollLeft -= v * 16;
+      v *= 0.94;
+      momentumRAF = requestAnimationFrame(step);
+    }
+    if(Math.abs(v) > 0.02) momentumRAF = requestAnimationFrame(step);
+    setTimeout(() => { moved = false; }, 0);
+  }
+
+  el.addEventListener('pointerup', endDrag);
+  el.addEventListener('pointercancel', endDrag);
+  el.addEventListener('pointerleave', () => { if(isDown) endDrag(); });
+
+  el.addEventListener('click', (e) => {
+    if(moved){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+}
+
 async function loadTrailerAndSimilar(m){
   trailerBlock.innerHTML = '';
   similarBlock.innerHTML = '';
@@ -305,6 +383,7 @@ async function loadSimilar(tmdbId){
         </div>
       </div>
     `;
+    setupDragScroll(similarBlock.querySelector('.similar-strip'));
   }catch(err){
     console.warn('Не вдалося завантажити схожі фільми:', err.message);
   }
