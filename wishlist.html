@@ -57,12 +57,16 @@
   .btn-approve{ background:var(--gold); border:1px solid var(--gold); color:#1b1610; }
   .btn-approve:hover{ background:var(--gold-bright); }
   .btn-reject{ background:none; border:1px solid #8a4a3d; color:#c98a7a; }
-  .btn-reject:hover{ background:#8a4a3d; color:var(--text); }  .cant-decide{
-    display:block; text-align:center; margin:0 0 20px; background:var(--panel); border:1px solid var(--gold);
+  .btn-reject:hover{ background:#8a4a3d; color:var(--text); }
+
+  .helper-row{ display:flex; gap:10px; margin-bottom:20px; }
+  .cant-decide{
+    flex:1; display:block; text-align:center; background:var(--panel); border:1px solid var(--gold);
     color:var(--gold-bright); text-decoration:none; padding:14px; font-size:13px; letter-spacing:0.04em;
     text-transform:uppercase; transition:background .15s, color .15s;
   }
   .cant-decide:hover{ background:var(--gold); color:#1b1610; }
+  @media (max-width:480px){ .helper-row{ flex-direction:column; } }
 </style>
 </head>
 <body>
@@ -102,7 +106,10 @@
     <div id="pendingList"><div class="empty-mini">Завантаження…</div></div>
   </div>
 
-  <a class="cant-decide" href="random-pick.html">🎡 Не можу обрати — крутити колесо</a>
+  <div class="helper-row">
+    <a class="cant-decide" href="random-pick.html">🎡 Крутити колесо</a>
+    <a class="cant-decide" href="duel.html">⚔️ Дуель фільмів</a>
+  </div>
 
   <div class="panel">
     <h2>Хочуть подивитись</h2>
