@@ -135,13 +135,16 @@ function rowHtml(it){
 }
 
 function buildTrack(){
-  let rows = '';
+  const n = items.length;
+  // "хвіст" з кінця списку — заповнює простір над першим фільмом, щоб виглядало зациклено
+  const prefix = items.slice(-CENTER_ROW);
+  let rows = prefix.map(rowHtml).join('');
   for(let c = 0; c < COPIES; c++){
     rows += items.map(rowHtml).join('');
   }
   reelTrack.innerHTML = rows;
   reelTrack.style.transition = 'none';
-  reelTrack.style.transform = `translateY(${CENTER_ROW * ROW_H}px)`;
+  reelTrack.style.transform = 'translateY(0px)';
 }
 
 function updateItems(newItems){
@@ -172,7 +175,7 @@ spinBtn.addEventListener('click', () => {
   const targetIdx = Math.floor(Math.random() * n);
   // приземляємось у копії ближче до кінця стрічки, щоб було довге прокручування
   const landingCopy = COPIES - 2;
-  const absoluteRow = landingCopy * n + targetIdx;
+  const absoluteRow = CENTER_ROW + landingCopy * n + targetIdx;
   const finalY = (CENTER_ROW - absoluteRow) * ROW_H;
 
   reelTrack.style.transition = 'transform 4.2s cubic-bezier(.11,.7,.14,1)';
