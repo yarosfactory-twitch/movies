@@ -86,14 +86,28 @@ const params = new URLSearchParams(window.location.search);
 const title = params.get('title') || '';
 const year = params.get('year') ? parseInt(params.get('year'), 10) : null;
 const poster = params.get('poster') || '';
-const genre = params.get('genre') || '';
-const note = params.get('note') || '';
+let genre = params.get('genre') || '';
+let note = params.get('note') || '';
 const wanted = params.get('wanted') || '';
 const tmdbId = params.get('tmdbId') ? parseInt(params.get('tmdbId'), 10) : null;
 
-if(!title){
-  content.innerHTML = `<div class="empty-state">Фільм не знайдено.<br><br><a class="twitch-link" href="wishlist.html">До побажань →</a></div>`;
-} else {
+async function render(){
+  if(!title){
+    content.innerHTML = `<div class="empty-state">Фільм не знайдено.<br><br><a class="twitch-link" href="wishlist.html">До побажань →</a></div>`;
+    return;
+  }
+
+  // якщо прийшли з "Схожі фільми" — там нема жанрів/опису, дотягуємо з TMDB
+  if(tmdbId && (!genre || !note)){
+    try{
+      const details = await tmdbGetMovieDetails(tmdbId);
+      if(!genre && details.genre && details.genre.length) genre = details.genre.join(', ');
+      if(!note && details.note) note = details.note;
+    }catch(err){
+      console.warn('Не вдалося дотягнути деталі з TMDB:', err.message);
+    }
+  }
+
   document.title = title + ' — побажання — yarosfactory';
 
   const posterInner = poster
@@ -104,7 +118,7 @@ if(!title){
     <div class="movie-hero">
       <div class="movie-poster">${posterInner}</div>
       <div class="movie-body">
-        <div class="wish-tag">📋 Із побажань — ще не в архіві</div>
+        <div class="wish-tag">📋 Ще не в архіві</div>
         <h2>${escapeHtml(title)}</h2>
         <div class="movie-meta">${year || ''}${year && genre ? ' · ' : ''}<span class="genre">${escapeHtml(genre)}</span></div>
         ${wanted ? `<div class="ordered-by">Хоче переглянути: <a href="https://www.twitch.tv/${encodeURIComponent(wanted)}" target="_blank" rel="noopener">${escapeHtml(wanted)}</a></div>` : ''}
@@ -116,6 +130,8 @@ if(!title){
 
   loadTrailer();
 }
+
+render();
 
 async function loadTrailer(){
   const wrap = document.getElementById('trailerWrap');
