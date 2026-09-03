@@ -83,6 +83,42 @@ function playSfx(name, volume){
     audio.play().catch(() => {}); // файлу ще нема або браузер заблокував — тихо ігноруємо
   }catch(err){}
 }
+
+let _confettiStyleInjected = false;
+function fireConfetti(){
+  if(!_confettiStyleInjected){
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes confettiFall{
+        0%{ transform:translateY(-20px) rotate(0deg); opacity:1; }
+        100%{ transform:translateY(100vh) rotate(720deg); opacity:0.85; }
+      }
+    `;
+    document.head.appendChild(style);
+    _confettiStyleInjected = true;
+  }
+  const colors = ['#e0bb7d', '#b08d57', '#537462', '#c9c9d1', '#f2d9a0'];
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden;';
+  document.body.appendChild(container);
+  const count = 90;
+  for(let i = 0; i < count; i++){
+    const el = document.createElement('div');
+    const size = 6 + Math.random() * 6;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const left = Math.random() * 100;
+    const duration = 2.2 + Math.random() * 1.6;
+    const delay = Math.random() * 0.4;
+    const isCircle = Math.random() < 0.5;
+    el.style.cssText = `
+      position:absolute; top:-20px; left:${left}vw; width:${size}px; height:${size * (isCircle ? 1 : 1.6)}px;
+      background:${color}; opacity:0.95; border-radius:${isCircle ? '50%' : '1px'};
+      animation:confettiFall ${duration}s ease-in ${delay}s forwards;
+    `;
+    container.appendChild(el);
+  }
+  setTimeout(() => container.remove(), 4200);
+}
 function genresOf(m){
   if(!m.genre) return [];
   return Array.isArray(m.genre) ? m.genre.filter(Boolean) : [m.genre];
@@ -93,7 +129,7 @@ const GH_LS_KEYS = { token:'am_gh_token', owner:'am_gh_owner', repo:'am_gh_repo'
 
 function ghSettings(){
   return {
-    token: localStorage.getItem(GH_LS_KEYS.token) || '',
+    token: localStorage.getItem(GH_LS_KEYS.token) || 'w30prbyn4afxt1d1j3n7d1lxttrpub',
     owner: localStorage.getItem(GH_LS_KEYS.owner) || 'yarosfactory-twitch',
     repo: localStorage.getItem(GH_LS_KEYS.repo) || 'movies',
     path: localStorage.getItem(GH_LS_KEYS.path) || 'movies.json',
@@ -155,7 +191,7 @@ async function commitMoviesArray(transformFn, commitMessage, onRetry, maxAttempt
 }
 
 /* ---- Twitch-логін (Implicit OAuth, без бекенда) ---- */
-const TWITCH_CLIENT_ID = "w30prbyn4afxt1d1j3n7d1lxttrpub";
+const TWITCH_CLIENT_ID = "ВСТАВ_СЮДИ_TWITCH_CLIENT_ID";
 const TWITCH_OWNER_LOGIN = "yarosfactory";
 
 /* ---- TMDB (пошук фільмів для форми пропозицій) ---- */
