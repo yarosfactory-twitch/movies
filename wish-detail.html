@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Фільм — побажання — yarosfactory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap{ max-width:880px; padding:52px 20px 90px; }
+  header{ margin-bottom:10px; }
+  .back-row{ margin-bottom:24px; }
+  .back-row button{
+    background:none; border:1px solid var(--border); color:var(--text-mute); padding:8px 16px;
+    font-size:12px; letter-spacing:0.03em; text-transform:uppercase; cursor:pointer; font-family:inherit;
+    transition:border-color .15s, color .15s;
+  }
+  .back-row button:hover{ border-color:var(--gold); color:var(--gold-bright); }
+
+  .movie-hero{ display:grid; grid-template-columns:220px 1fr; gap:36px; align-items:start; }
+  @media (max-width:640px){ .movie-hero{ grid-template-columns:1fr; } }
+  .movie-poster{
+    position:relative; aspect-ratio:2/3; border:1px solid var(--gold); background:var(--panel) center/cover no-repeat;
+    overflow:hidden;
+  }
+  .movie-poster img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .movie-poster .no-poster{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:20px; font-family:'Spectral', serif; font-size:16px; color:var(--text-mute);
+  }
+  .movie-body h2{ font-family:'Spectral', serif; font-weight:700; font-size:clamp(24px,3.4vw,34px); color:var(--text); margin:0 0 10px; }
+  .movie-meta{ font-size:13px; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px; }
+  .movie-meta .genre{ color:var(--teal); }
+  .wish-tag{
+    display:inline-block; margin-bottom:14px; background:rgba(224,187,125,0.1); border:1px solid var(--gold);
+    color:var(--gold-bright); font-size:11px; letter-spacing:0.05em; text-transform:uppercase; padding:5px 12px;
+  }
+  .ordered-by{ font-size:13.5px; color:var(--text-dim); margin-bottom:14px; }
+  .ordered-by a{ color:var(--gold-bright); text-decoration:none; border-bottom:1px solid var(--gold-bright); }
+  .movie-note{ font-size:14.5px; color:var(--text-dim); line-height:1.65; max-width:560px; }
+
+  .trailer-wrap{ margin-top:22px; }
+  .trailer-btn{
+    display:inline-block; background:var(--panel); border:1px solid var(--gold); color:var(--gold-bright);
+    padding:11px 24px; font-size:13px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s, color .15s;
+  }
+  .trailer-btn:hover{ background:var(--gold); color:#1b1610; }
+  .trailer-embed{
+    margin-top:16px; position:relative; width:100%; max-width:640px; aspect-ratio:16/9;
+    border:1px solid var(--gold); background:#000;
+  }
+  .trailer-embed iframe{ position:absolute; inset:0; width:100%; height:100%; border:none; }
+
+  .no-desc-note{ font-size:12.5px; color:var(--text-mute); margin-top:20px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">yarosfactory · ярос</div>
+    <nav class="pagenav">
+      <a href="wishlist.html">← Побажання</a>
+    </nav>
+    <div id="authWidget"></div>
+  </header>
+
+  <div class="back-row"><button onclick="history.length > 1 ? history.back() : (window.location.href='wishlist.html')">← Повернутися назад</button></div>
+
+  <div id="content"><div class="empty-state">Завантаження…</div></div>
+
+  <footer>оновлюється вручну · movies.json</footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="common.js"></script>
+<script>
+const content = document.getElementById('content');
+const params = new URLSearchParams(window.location.search);
+
+const title = params.get('title') || '';
+const year = params.get('year') ? parseInt(params.get('year'), 10) : null;
+const poster = params.get('poster') || '';
+const genre = params.get('genre') || '';
+const note = params.get('note') || '';
+const wanted = params.get('wanted') || '';
+const tmdbId = params.get('tmdbId') ? parseInt(params.get('tmdbId'), 10) : null;
+
+if(!title){
+  content.innerHTML = `<div class="empty-state">Фільм не знайдено.<br><br><a class="twitch-link" href="wishlist.html">До побажань →</a></div>`;
+} else {
+  document.title = title + ' — побажання — yarosfactory';
+
+  const posterInner = poster
+    ? `<img src="${escapeHtml(poster)}" alt="${escapeHtml(title)}">`
+    : `<div class="no-poster">${escapeHtml(title)}</div>`;
+
+  content.innerHTML = `
+    <div class="movie-hero">
+      <div class="movie-poster">${posterInner}</div>
+      <div class="movie-body">
+        <div class="wish-tag">📋 Із побажань — ще не в архіві</div>
+        <h2>${escapeHtml(title)}</h2>
+        <div class="movie-meta">${year || ''}${year && genre ? ' · ' : ''}<span class="genre">${escapeHtml(genre)}</span></div>
+        ${wanted ? `<div class="ordered-by">Хоче переглянути: <a href="https://www.twitch.tv/${encodeURIComponent(wanted)}" target="_blank" rel="noopener">${escapeHtml(wanted)}</a></div>` : ''}
+        ${note ? `<p class="movie-note">${escapeHtml(note)}</p>` : `<p class="no-desc-note">Опису поки нема.</p>`}
+        <div class="trailer-wrap" id="trailerWrap"></div>
+      </div>
+    </div>
+  `;
+
+  loadTrailer();
+}
+
+async function loadTrailer(){
+  const wrap = document.getElementById('trailerWrap');
+  try{
+    let id = tmdbId;
+    if(!id) id = await tmdbFindId(title, year);
+    if(!id) return;
+    const key = await tmdbGetTrailerKey(id);
+    if(!key) return;
+    wrap.innerHTML = `
+      <button type="button" class="trailer-btn" id="trailerBtn">▶ Дивитись трейлер</button>
+      <div class="trailer-embed" id="trailerEmbed" style="display:none;"></div>
+    `;
+    document.getElementById('trailerBtn').addEventListener('click', function(){
+      document.getElementById('trailerEmbed').innerHTML =
+        `<iframe src="https://www.youtube.com/embed/${key}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+      document.getElementById('trailerEmbed').style.display = '';
+      this.style.display = 'none';
+    });
+  }catch(err){
+    console.warn('Не вдалося завантажити трейлер:', err.message);
+  }
+}
+
+initAuth(document.getElementById('authWidget'));
+</script>
+
+</body>
+</html>
