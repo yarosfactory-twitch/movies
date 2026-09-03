@@ -384,11 +384,58 @@ function renderComments(container, movie){
   const textInput = document.getElementById('commentText');
   const listEl = document.getElementById('commentList');
   const submitBtn = form.querySelector('button');
+  const errEl = document.createElement('div');
+  errEl.className = 'comment-error';
+  errEl.style.display = 'none';
+  form.insertBefore(errEl, submitBtn);
+
+  function showCommentError(msg){
+    errEl.textContent = msg;
+    errEl.style.display = 'block';
+  }
+  function clearCommentError(){
+    errEl.style.display = 'none';
+  }
+
+  const COMMENT_COOLDOWN_MS = 60000;
+  function validateComment(text){
+    const chars = Array.from(text);
+    if(chars.length < 20){
+      return 'Коментар має бути хоча б 20 символів.';
+    }
+    let runChar = null, runLen = 0;
+    for(const ch of chars){
+      if(ch === runChar){
+        runLen++;
+        if(runLen >= 5){
+          return 'Забагато однакових символів підряд — напиши щось змістовне.';
+        }
+      } else {
+        runChar = ch;
+        runLen = 1;
+      }
+    }
+    const lastAt = parseInt(localStorage.getItem('lastCommentAt') || '0', 10);
+    const now = Date.now();
+    if(now - lastAt < COMMENT_COOLDOWN_MS){
+      const waitSec = Math.ceil((COMMENT_COOLDOWN_MS - (now - lastAt)) / 1000);
+      return `Зачекай ще ${waitSec} с перед наступним коментарем.`;
+    }
+    return null;
+  }
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    clearCommentError();
     const text = textInput.value.trim();
     if(!text) return;
+
+    const err = validateComment(text);
+    if(err){
+      showCommentError(err);
+      return;
+    }
+
     submitBtn.disabled = true;
     const name = twitchUser ? twitchUser.display_name : (nameInput ? nameInput.value.trim().slice(0, 40) : '');
     colRef.add({
@@ -397,8 +444,10 @@ function renderComments(container, movie){
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
       textInput.value = '';
+      localStorage.setItem('lastCommentAt', String(Date.now()));
     }).catch(err => {
       console.warn('Не вдалося надіслати коментар:', err.message);
+      showCommentError('Не вдалося надіслати — спробуй ще раз.');
     }).finally(() => {
       submitBtn.disabled = false;
     });
