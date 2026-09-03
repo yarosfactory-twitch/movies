@@ -143,6 +143,40 @@ async function commitMoviesArray(transformFn, commitMessage, onRetry, maxAttempt
 const TWITCH_CLIENT_ID = "w30prbyn4afxt1d1j3n7d1lxttrpub";
 const TWITCH_OWNER_LOGIN = "yarosfactory";
 
+/* ---- TMDB (пошук фільмів для форми пропозицій) ---- */
+const TMDB_API_KEY = "7c2b3da6976f16ca5acc1b80122966bd";
+const TMDB_IMG_BASE = "https://image.tmdb.org/t/p/w220_and_h330_face";
+
+async function tmdbSearchMovies(query){
+  if(!query || !query.trim()) return [];
+  const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&language=uk-UA&query=${encodeURIComponent(query.trim())}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('Помилка TMDB (' + res.status + ')');
+  const data = await res.json();
+  return (data.results || []).map(r => ({
+    id: r.id,
+    title: r.title || r.original_title || '',
+    year: r.release_date ? parseInt(r.release_date.slice(0, 4), 10) : null,
+    poster: r.poster_path ? TMDB_IMG_BASE + r.poster_path : '',
+    overview: r.overview || ''
+  }));
+}
+
+async function tmdbGetMovieDetails(id){
+  const url = `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&language=uk-UA`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('Помилка TMDB (' + res.status + ')');
+  const data = await res.json();
+  return {
+    id: data.id,
+    title: data.title || data.original_title || '',
+    year: data.release_date ? parseInt(data.release_date.slice(0, 4), 10) : null,
+    poster: data.poster_path ? TMDB_IMG_BASE + data.poster_path : '',
+    genre: (data.genres || []).map(g => g.name),
+    note: data.overview || ''
+  };
+}
+
 function twitchRedirectUri(){
   const path = window.location.pathname;
   const base = path.slice(0, path.lastIndexOf('/') + 1);
