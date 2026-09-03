@@ -84,6 +84,23 @@
   details{ margin-top:6px; }
   details summary{ font-size:12px; color:var(--text-mute); cursor:pointer; }
   details .row{ margin-top:12px; }
+  #tmdbSearchResults{
+    margin-top:8px; margin-bottom:16px; max-height:280px; overflow-y:auto; border:1px solid var(--border);
+    display:none;
+  }
+  #tmdbSearchResults.show{ display:block; }
+  .tmdb-result{
+    display:flex; gap:10px; align-items:center; padding:8px 10px; cursor:pointer;
+    border-bottom:1px solid var(--border); text-align:left;
+  }
+  .tmdb-result:last-child{ border-bottom:none; }
+  .tmdb-result:hover{ background:var(--panel-2); }
+  .tmdb-result img, .tmdb-result .no-thumb{
+    width:32px; height:46px; object-fit:cover; flex:0 0 auto; background:var(--panel-2);
+  }
+  .tmdb-result .no-thumb{ display:flex; align-items:center; justify-content:center; font-size:8px; color:var(--text-mute); }
+  .tmdb-result .tr-title{ font-size:13px; color:var(--text); }
+  .tmdb-result .tr-year{ font-size:11px; color:var(--text-mute); }
 </style>
 </head>
 <body>
@@ -151,6 +168,11 @@
 
   <form class="panel" id="movieForm">
     <h2>Фільм</h2>
+
+    <label for="tmdbSearchInput">Пошук у TMDB (заповнить поля нижче автоматично)</label>
+    <input type="text" id="tmdbSearchInput" placeholder="Почни вводити назву…" autocomplete="off">
+    <div id="tmdbSearchResults"></div>
+
     <label for="fTitle">Назва *</label>
     <input type="text" id="fTitle" required placeholder="Назва фільму">
 
@@ -273,6 +295,63 @@ fetch('movies.json')
 
 // prefill from a wishlist "Опублікувати" link (title/year/poster only — date and замовник stay empty on purpose)
 let usedSuggestionId = null;
+
+const tmdbSearchInput = document.getElementById('tmdbSearchInput');
+const tmdbSearchResults = document.getElementById('tmdbSearchResults');
+let tmdbSearchDebounce = null;
+
+tmdbSearchInput.addEventListener('input', () => {
+  clearTimeout(tmdbSearchDebounce);
+  const q = tmdbSearchInput.value.trim();
+  if(q.length < 2){
+    tmdbSearchResults.classList.remove('show');
+    tmdbSearchResults.innerHTML = '';
+    return;
+  }
+  tmdbSearchDebounce = setTimeout(async () => {
+    try{
+      const results = await tmdbSearchMovies(q);
+      if(results.length === 0){
+        tmdbSearchResults.classList.remove('show');
+        tmdbSearchResults.innerHTML = '';
+        return;
+      }
+      tmdbSearchResults.innerHTML = results.slice(0, 8).map((r, i) => {
+        const thumb = r.poster
+          ? `<img src="${escapeHtml(r.poster)}" alt="">`
+          : `<div class="no-thumb">?</div>`;
+        return `
+          <div class="tmdb-result" data-idx="${i}">
+            ${thumb}
+            <div><div class="tr-title">${escapeHtml(r.title)}</div><div class="tr-year">${r.year || ''}</div></div>
+          </div>
+        `;
+      }).join('');
+      tmdbSearchResults.classList.add('show');
+      tmdbSearchResults.querySelectorAll('.tmdb-result').forEach(el => {
+        el.addEventListener('click', async () => {
+          const picked = results[parseInt(el.dataset.idx, 10)];
+          document.getElementById('fTitle').value = picked.title || '';
+          if(picked.year) document.getElementById('fYear').value = picked.year;
+          if(picked.poster) document.getElementById('fPoster').value = picked.poster;
+          tmdbSearchResults.classList.remove('show');
+          tmdbSearchResults.innerHTML = '';
+          tmdbSearchInput.value = '';
+          try{
+            const details = await tmdbGetMovieDetails(picked.id);
+            if(details.genre && details.genre.length) document.getElementById('fGenre').value = details.genre.join(', ');
+            if(details.note) document.getElementById('fNote').value = details.note;
+          }catch(err){
+            console.warn('Не вдалося дотягнути жанри/опис з TMDB:', err.message);
+          }
+          document.getElementById('fWatched').focus();
+        });
+      });
+    }catch(err){
+      console.warn('Помилка пошуку TMDB:', err.message);
+    }
+  }, 400);
+});
 
 (function prefillFromWishlist(){
   const params = new URLSearchParams(window.location.search);
