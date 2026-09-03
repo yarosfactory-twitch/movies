@@ -10,36 +10,62 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="common.css">
 <style>
-  .wrap{ max-width:620px; padding:56px 20px 90px; text-align:center; }
+  .wrap{ max-width:560px; padding:56px 20px 90px; text-align:center; }
   header{ margin-bottom:20px; }
   h1{ font-size:clamp(28px, 4.5vw, 40px); margin-bottom:10px; }
   .sub{ margin:0 auto; }
 
-  .wheel-wrap{
-    position:relative; width:min(320px, 82vw); aspect-ratio:1/1; margin:36px auto 10px;
+  .reel-wrap{ position:relative; max-width:480px; margin:36px auto 10px; }
+
+  .reel-window{
+    height:calc(var(--row-h) * 5);
+    overflow:hidden; position:relative;
+    background:var(--panel); border:3px solid var(--gold);
+    box-shadow:0 0 34px rgba(224,187,125,0.18);
   }
-  .wheel-pointer{
-    position:absolute; top:-18px; left:50%; transform:translateX(-50%);
-    font-size:26px; color:var(--gold-bright); z-index:5; text-shadow:0 2px 4px rgba(0,0,0,0.6);
+  :root{ --row-h: 76px; }
+
+  .reel-track{ will-change:transform; }
+
+  .reel-row{
+    height:var(--row-h); display:flex; align-items:center; gap:14px;
+    padding:0 18px; box-sizing:border-box;
+    border-bottom:1px solid var(--border);
   }
-  .wheel{
-    width:100%; height:100%; border-radius:50%;
-    border:3px solid var(--gold); box-shadow:0 0 34px rgba(224,187,125,0.18);
-    position:relative; overflow:hidden;
-    transform:rotate(0deg);
-    transition:transform 4s cubic-bezier(.13,.66,.15,1);
+  .reel-row .thumb{
+    width:44px; height:60px; flex:0 0 auto; object-fit:cover;
+    background:var(--panel-2); border:1px solid var(--border);
   }
-  .wheel .seg-label{
-    position:absolute; top:50%; left:50%; width:50%; height:2px;
-    transform-origin:0% 50%;
-    display:flex; align-items:center;
-    padding-left:16px;
-    font-size:11px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    max-width:46%;
-    pointer-events:none;
+  .reel-row .no-thumb{
+    width:44px; height:60px; flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+    background:var(--panel-2); border:1px solid var(--border); font-size:9px; color:var(--text-mute); text-align:center; padding:2px;
   }
+  .reel-row .title{
+    font-size:16px; color:var(--text); text-align:left;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+
+  .reel-center-band{
+    position:absolute; left:0; right:0; top:50%; height:var(--row-h);
+    transform:translateY(-50%);
+    border-top:2px solid var(--gold-bright); border-bottom:2px solid var(--gold-bright);
+    background:rgba(224,187,125,0.08);
+    pointer-events:none; z-index:2;
+  }
+  .reel-arrow-left, .reel-arrow-right{
+    position:absolute; top:50%; transform:translateY(-50%); font-size:20px; color:var(--gold-bright); z-index:3;
+  }
+  .reel-arrow-left{ left:-4px; }
+  .reel-arrow-right{ right:-4px; }
+
+  .reel-fade-top, .reel-fade-bottom{
+    position:absolute; left:0; right:0; height:60px; z-index:1; pointer-events:none;
+  }
+  .reel-fade-top{ top:0; background:linear-gradient(180deg, var(--panel), transparent); }
+  .reel-fade-bottom{ bottom:0; background:linear-gradient(0deg, var(--panel), transparent); }
+
   .wheel-spin-btn{
-    display:inline-block; margin:14px auto 0; background:var(--gold); border:1px solid var(--gold); color:#1b1610;
+    display:inline-block; margin:20px auto 0; background:var(--gold); border:1px solid var(--gold); color:#1b1610;
     padding:13px 36px; font-size:14px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
     cursor:pointer; transition:background .15s;
   }
@@ -57,7 +83,7 @@
   <header>
     <div class="eyebrow">yarosfactory · ярос</div>
     <h1>Колесо випадковості</h1>
-    <p class="sub">Не можеш обрати, що замовити? Хай вирішить колесо.</p>
+    <p class="sub">Не можеш обрати, що замовити? Хай вирішить барабан.</p>
     <nav class="pagenav">
       <a href="wishlist.html">← Побажання</a>
     </nav>
@@ -65,14 +91,20 @@
   </header>
 
   <div id="wheelSection">
-    <div class="wheel-wrap">
-      <div class="wheel-pointer">▼</div>
-      <div class="wheel" id="wheelEl"></div>
+    <div class="reel-wrap">
+      <div class="reel-arrow-left">▶</div>
+      <div class="reel-arrow-right">◀</div>
+      <div class="reel-window">
+        <div class="reel-center-band"></div>
+        <div class="reel-fade-top"></div>
+        <div class="reel-fade-bottom"></div>
+        <div class="reel-track" id="reelTrack"></div>
+      </div>
     </div>
     <button type="button" class="wheel-spin-btn" id="spinBtn">Крутити!</button>
     <div class="wheel-result" id="wheelResult"></div>
   </div>
-  <div class="empty-mini" id="emptyMsg" style="display:none;">Ще замало схвалених побажань, щоб крутити колесо (потрібно хоча б два).</div>
+  <div class="empty-mini" id="emptyMsg" style="display:none;">Ще замало схвалених побажань, щоб крутити (потрібно хоча б два).</div>
 
   <footer>оновлюється вручну · movies.json</footer>
 </div>
@@ -83,18 +115,38 @@
 <script>
 const wheelSection = document.getElementById('wheelSection');
 const emptyMsg = document.getElementById('emptyMsg');
-const wheelEl = document.getElementById('wheelEl');
+const reelTrack = document.getElementById('reelTrack');
 const spinBtn = document.getElementById('spinBtn');
 const wheelResult = document.getElementById('wheelResult');
 
-const WHEEL_COLORS = ['#3a2f22', '#2a2620'];
-let wheelItems = [];
-let wheelRotation = 0;
+const ROW_H = 76;
+const VISIBLE_ROWS = 5;
+const CENTER_ROW = Math.floor(VISIBLE_ROWS / 2); // 2
+const COPIES = 12; // скільки разів повторити список у стрічці для довгого прокручування
+
+let items = [];
 let isSpinning = false;
 
-function updateWheel(items){
+function rowHtml(it){
+  const thumb = it.poster
+    ? `<img class="thumb" src="${escapeHtml(it.poster)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=&quot;no-thumb&quot;>${escapeHtml((it.title||'').slice(0,10))}</div>'">`
+    : `<div class="no-thumb">${escapeHtml((it.title || '').slice(0, 10))}</div>`;
+  return `<div class="reel-row">${thumb}<div class="title">${escapeHtml(it.title || '')}</div></div>`;
+}
+
+function buildTrack(){
+  let rows = '';
+  for(let c = 0; c < COPIES; c++){
+    rows += items.map(rowHtml).join('');
+  }
+  reelTrack.innerHTML = rows;
+  reelTrack.style.transition = 'none';
+  reelTrack.style.transform = `translateY(${CENTER_ROW * ROW_H}px)`;
+}
+
+function updateItems(newItems){
   if(isSpinning) return;
-  wheelItems = items;
+  items = newItems;
   if(items.length < 2){
     wheelSection.style.display = 'none';
     emptyMsg.style.display = '';
@@ -102,49 +154,33 @@ function updateWheel(items){
   }
   wheelSection.style.display = '';
   emptyMsg.style.display = 'none';
-
-  const n = items.length;
-  const seg = 360 / n;
-  const stops = items.map((_, i) => {
-    const color = WHEEL_COLORS[i % WHEEL_COLORS.length];
-    return `${color} ${(i*seg).toFixed(2)}deg ${((i+1)*seg).toFixed(2)}deg`;
-  }).join(', ');
-  wheelEl.style.background = `conic-gradient(${stops})`;
-
-  const labels = items.map((it, i) => {
-    const angle = i*seg + seg/2;
-    const title = (it.title || '').length > 18 ? it.title.slice(0, 17) + '…' : (it.title || '');
-    return `<div class="seg-label" style="transform:translateY(-50%) rotate(${angle}deg)">${escapeHtml(title)}</div>`;
-  }).join('');
-  wheelEl.innerHTML = labels;
-  wheelEl.style.transition = 'none';
-  wheelEl.style.transform = `rotate(${wheelRotation}deg)`;
   wheelResult.textContent = '';
+  buildTrack();
 }
 
 spinBtn.addEventListener('click', () => {
-  if(isSpinning || wheelItems.length < 2) return;
+  if(isSpinning || items.length < 2) return;
   isSpinning = true;
   spinBtn.disabled = true;
   wheelResult.textContent = '';
 
-  const n = wheelItems.length;
-  const seg = 360 / n;
+  // починаємо кожне кручення заново з нейтральної позиції (непомітно, бо відразу ж рушаємо анімацію)
+  buildTrack();
+  void reelTrack.offsetHeight; // форсуємо застосування скидання перед новою анімацією
+
+  const n = items.length;
   const targetIdx = Math.floor(Math.random() * n);
-  const jitter = (Math.random() - 0.5) * seg * 0.7;
-  const desiredMod = ((360 - (targetIdx*seg + seg/2 + jitter)) % 360 + 360) % 360;
-  const currentMod = ((wheelRotation % 360) + 360) % 360;
-  let delta = desiredMod - currentMod;
-  if(delta < 0) delta += 360;
-  const fullSpins = 5 * 360;
-  wheelRotation += fullSpins + delta;
+  // приземляємось у копії ближче до кінця стрічки, щоб було довге прокручування
+  const landingCopy = COPIES - 2;
+  const absoluteRow = landingCopy * n + targetIdx;
+  const finalY = (CENTER_ROW - absoluteRow) * ROW_H;
 
-  wheelEl.style.transition = 'transform 4s cubic-bezier(.13,.66,.15,1)';
-  wheelEl.style.transform = `rotate(${wheelRotation}deg)`;
+  reelTrack.style.transition = 'transform 4.2s cubic-bezier(.11,.7,.14,1)';
+  reelTrack.style.transform = `translateY(${finalY}px)`;
 
-  wheelEl.addEventListener('transitionend', function handler(){
-    wheelEl.removeEventListener('transitionend', handler);
-    const winner = wheelItems[targetIdx];
+  reelTrack.addEventListener('transitionend', function handler(){
+    reelTrack.removeEventListener('transitionend', handler);
+    const winner = items[targetIdx];
     wheelResult.textContent = `🎬 ${winner.title || ''}`;
     isSpinning = false;
     spinBtn.disabled = false;
@@ -161,8 +197,8 @@ function loadSuggestions(){
   db.collection('suggestions').where('status', '==', 'approved')
     .orderBy('createdAt', 'desc')
     .onSnapshot(snap => {
-      const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      updateWheel(items);
+      const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateItems(list);
     }, err => {
       emptyMsg.textContent = 'Помилка завантаження: ' + err.message;
       emptyMsg.style.display = '';
