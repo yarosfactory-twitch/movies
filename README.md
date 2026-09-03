@@ -114,7 +114,7 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read: if true;
         allow create: if request.resource.data.text is string
-                       && request.resource.data.text.size() > 0
+                       && request.resource.data.text.size() >= 20
                        && request.resource.data.text.size() < 500
                        && request.resource.data.name is string;
         allow update, delete: if false;
