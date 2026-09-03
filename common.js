@@ -342,6 +342,43 @@ async function initAuth(container){
   if(!container) return;
   await handleTwitchCallback();
   renderAuthWidget(container);
+  renderLiveBadge(container);
+}
+
+/* ---- Чи в ефірі зараз (через decapi.me, без токенів) ---- */
+async function checkTwitchLive(channel){
+  try{
+    const res = await fetch(`https://decapi.me/twitch/uptime/${channel}?offline_msg=offline`);
+    const text = (await res.text()).trim();
+    return text.toLowerCase() === 'offline' ? null : text;
+  }catch(err){
+    return null;
+  }
+}
+
+let _liveBadgeEl = null;
+async function renderLiveBadge(anchorEl){
+  if(!_liveBadgeEl){
+    _liveBadgeEl = document.createElement('div');
+    _liveBadgeEl.className = 'live-badge';
+    _liveBadgeEl.style.display = 'none';
+    if(anchorEl && anchorEl.parentNode){
+      anchorEl.parentNode.insertBefore(_liveBadgeEl, anchorEl);
+    }
+    setInterval(updateLiveBadge, 60000);
+  }
+  updateLiveBadge();
+}
+
+async function updateLiveBadge(){
+  if(!_liveBadgeEl) return;
+  const uptime = await checkTwitchLive(TWITCH_OWNER_LOGIN);
+  if(uptime){
+    _liveBadgeEl.innerHTML = `<a href="https://www.twitch.tv/${TWITCH_OWNER_LOGIN}" target="_blank" rel="noopener">🔴 В ЕФІРІ · ${escapeHtml(uptime)}</a>`;
+    _liveBadgeEl.style.display = '';
+  } else {
+    _liveBadgeEl.style.display = 'none';
+  }
 }
 
 /* ---- Оцінка глядачів (1-10): container — DOM-елемент, movie — об'єкт фільму ---- */
