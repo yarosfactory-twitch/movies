@@ -252,6 +252,7 @@ function showFinal(winner){
   roundLabel.textContent = '';
   chatVoteRow.style.display = 'none';
   playSfx('fanfare', 0.6);
+  fireConfetti();
   duelStage.innerHTML = `
     <div class="duel-final">
       <h2>Переможець дуелі</h2>
