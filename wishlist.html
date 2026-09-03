@@ -236,11 +236,12 @@ function eyeBadgeHtml(title, year){
 let pendingItemsCache = [];
 let approvedItemsCache = [];
 
-function isAlreadyInWishlist(title, year){
+function isAlreadyInWishlist(title, year, excludeId){
   const norm = normalizeTitle(title);
   if(!norm) return false;
   const all = pendingItemsCache.concat(approvedItemsCache);
   return all.some(d => {
+    if(excludeId && d.id === excludeId) return false;
     if(!d.title) return false;
     if(normalizeTitle(d.title) !== norm) return false;
     if(year && d.year) return d.year === year;
@@ -248,8 +249,8 @@ function isAlreadyInWishlist(title, year){
   });
 }
 
-function duplicateBadgeHtml(title, year){
-  if(!isAlreadyInWishlist(title, year)) return '';
+function duplicateBadgeHtml(title, year, excludeId){
+  if(!isAlreadyInWishlist(title, year, excludeId)) return '';
   return `<span class="dup-badge" title="Такий фільм вже є в побажаннях">⚠ вже запропоновано</span>`;
 }
 
@@ -470,6 +471,7 @@ function renderPending(){
                   <div style="font-size:14px; color:var(--text); font-weight:600;">${escapeHtml(d.title)}</div>
                   <div style="font-size:11.5px; color:var(--text-mute);">${d.year || ''}</div>
                 </div>
+                ${duplicateBadgeHtml(d.title, d.year, doc.id)}
               </div>
               <div class="meta">${who}</div>
               <div class="pending-actions">
