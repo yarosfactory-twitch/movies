@@ -68,6 +68,21 @@ function slugify(str){
     .replace(/^-+|-+$/g, '') || 'movie';
 }
 function movieId(m){ return m.id || slugify(m.title); }
+
+/* ---- Звукові ефекти (колесо/дуель/плей-офф) ---- */
+const _sfxCache = {};
+function playSfx(name, volume){
+  try{
+    let audio = _sfxCache[name];
+    if(!audio){
+      audio = new Audio(name + '.mp3');
+      _sfxCache[name] = audio;
+    }
+    audio.currentTime = 0;
+    audio.volume = volume != null ? volume : 0.5;
+    audio.play().catch(() => {}); // файлу ще нема або браузер заблокував — тихо ігноруємо
+  }catch(err){}
+}
 function genresOf(m){
   if(!m.genre) return [];
   return Array.isArray(m.genre) ? m.genre.filter(Boolean) : [m.genre];
