@@ -54,6 +54,38 @@
   .ordered-by a:hover{ border-color:var(--gold-bright); }
   .movie-note{ font-size:14.5px; color:var(--text-dim); line-height:1.65; max-width:520px; }
 
+  .trailer-wrap{ max-width:880px; margin:30px auto 0; }
+  .trailer-btn{
+    display:inline-block; background:var(--panel); border:1px solid var(--gold); color:var(--gold-bright);
+    padding:11px 24px; font-size:13px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s, color .15s;
+  }
+  .trailer-btn:hover{ background:var(--gold); color:#1b1610; }
+  .trailer-embed{
+    margin-top:16px; position:relative; width:100%; aspect-ratio:16/9;
+    border:1px solid var(--gold); background:#000;
+  }
+  .trailer-embed iframe{ position:absolute; inset:0; width:100%; height:100%; border:none; }
+
+  .similar-wrap{ max-width:880px; margin:30px auto 0; }
+  .similar-wrap h3{ font-family:'Spectral', serif; font-weight:600; font-size:16px; color:var(--gold-bright); margin:0 0 14px; }
+  .similar-strip{ display:flex; gap:14px; overflow-x:auto; padding-bottom:6px; }
+  .similar-card{ flex:0 0 auto; width:130px; background:var(--panel); border:1px solid var(--border); }
+  .similar-card .poster{ aspect-ratio:2/3; background:var(--panel-2) center/cover no-repeat; position:relative; }
+  .similar-card .poster img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .similar-card .no-poster{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:8px; font-family:'Spectral', serif; font-size:11px; color:var(--text-mute);
+  }
+  .similar-card .si-info{ padding:8px 10px 10px; }
+  .similar-card h4{ font-size:12px; color:var(--text); margin:0 0 3px; line-height:1.25; font-weight:600; }
+  .similar-card .si-year{ font-size:10.5px; color:var(--text-mute); margin-bottom:6px; }
+  .similar-card .si-suggest{
+    display:block; text-align:center; font-size:10.5px; color:var(--gold-bright); text-decoration:none;
+    border:1px solid var(--gold); padding:5px; transition:background .15s, color .15s;
+  }
+  .similar-card .si-suggest:hover{ background:var(--gold); color:#1b1610; }
+
   .section-block{ max-width:880px; margin:30px auto 0; }
   .section-block .reactions{ background:var(--panel); border:1px solid var(--border); padding:20px 24px; justify-content:flex-start; }
   .section-block .comments{ background:var(--panel); border:1px solid var(--border); padding:24px 26px; margin-top:18px; }
@@ -122,6 +154,8 @@
 
   <div id="movieSection"><div class="empty-state">Завантаження…</div></div>
   <div id="editPanel"></div>
+  <div id="trailerBlock"></div>
+  <div id="similarBlock"></div>
   <div id="ratingBlock"></div>
   <div id="reactionsBlock"></div>
   <div id="commentsBlock"></div>
@@ -194,6 +228,86 @@ function renderMovie(m){
 
   commentsBlock.innerHTML = `<div class="section-block"></div>`;
   renderComments(commentsBlock.firstChild, m);
+
+  loadTrailerAndSimilar(m);
+}
+
+const trailerBlock = document.getElementById('trailerBlock');
+const similarBlock = document.getElementById('similarBlock');
+
+async function loadTrailerAndSimilar(m){
+  trailerBlock.innerHTML = '';
+  similarBlock.innerHTML = '';
+  if(m.__placeholder) return;
+
+  let tmdbId = m.tmdbId || null;
+  try{
+    if(!tmdbId){
+      tmdbId = await tmdbFindId(m.title, m.year);
+    }
+    if(!tmdbId) return;
+
+    loadTrailer(tmdbId);
+    loadSimilar(tmdbId);
+  }catch(err){
+    console.warn('TMDB: не вдалося визначити фільм:', err.message);
+  }
+}
+
+async function loadTrailer(tmdbId){
+  try{
+    const key = await tmdbGetTrailerKey(tmdbId);
+    if(!key) return;
+    trailerBlock.innerHTML = `
+      <div class="trailer-wrap">
+        <button type="button" class="trailer-btn" id="trailerBtn">▶ Дивитись трейлер</button>
+        <div class="trailer-embed" id="trailerEmbed" style="display:none;"></div>
+      </div>
+    `;
+    document.getElementById('trailerBtn').addEventListener('click', function(){
+      document.getElementById('trailerEmbed').innerHTML =
+        `<iframe src="https://www.youtube.com/embed/${key}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+      document.getElementById('trailerEmbed').style.display = '';
+      this.style.display = 'none';
+    });
+  }catch(err){
+    console.warn('Не вдалося завантажити трейлер:', err.message);
+  }
+}
+
+async function loadSimilar(tmdbId){
+  try{
+    const list = await tmdbGetRecommendations(tmdbId);
+    if(!list.length) return;
+    similarBlock.innerHTML = `
+      <div class="similar-wrap">
+        <h3>Схожі фільми</h3>
+        <div class="similar-strip">
+          ${list.slice(0, 10).map(r => {
+            const posterInner = r.poster
+              ? `<img src="${escapeHtml(r.poster)}" alt="">`
+              : `<div class="no-poster">${escapeHtml(r.title)}</div>`;
+            const suggestHref = 'wishlist.html?title=' + encodeURIComponent(r.title || '')
+              + '&year=' + encodeURIComponent(r.year || '')
+              + '&poster=' + encodeURIComponent(r.poster || '')
+              + '&tmdbId=' + encodeURIComponent(r.id);
+            return `
+              <div class="similar-card">
+                <div class="poster">${posterInner}</div>
+                <div class="si-info">
+                  <h4>${escapeHtml(r.title)}</h4>
+                  <div class="si-year">${r.year || ''}</div>
+                  <a class="si-suggest" href="${suggestHref}">Запропонувати →</a>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }catch(err){
+    console.warn('Не вдалося завантажити схожі фільми:', err.message);
+  }
 }
 
 function renderEditPanel(m){
