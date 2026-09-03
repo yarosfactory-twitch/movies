@@ -226,14 +226,20 @@ function renderMovie(m){
     editPanel.innerHTML = '';
   }
 
-  ratingBlock.innerHTML = `<div class="section-block"></div>`;
-  renderViewerRating(ratingBlock.firstChild, m);
+  if(status === 'today' || status === 'watched'){
+    ratingBlock.innerHTML = `<div class="section-block"></div>`;
+    renderViewerRating(ratingBlock.firstChild, m);
 
-  reactionsBlock.innerHTML = `<div class="section-block"></div>`;
-  renderReactions(reactionsBlock.firstChild, m);
+    reactionsBlock.innerHTML = `<div class="section-block"></div>`;
+    renderReactions(reactionsBlock.firstChild, m);
 
-  commentsBlock.innerHTML = `<div class="section-block"></div>`;
-  renderComments(commentsBlock.firstChild, m);
+    commentsBlock.innerHTML = `<div class="section-block"></div>`;
+    renderComments(commentsBlock.firstChild, m);
+  } else {
+    ratingBlock.innerHTML = '';
+    reactionsBlock.innerHTML = '';
+    commentsBlock.innerHTML = '';
+  }
 
   loadTrailerAndSimilar(m);
 }
