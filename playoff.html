@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Плей-офф — yarosfactory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap{ max-width:760px; padding:56px 20px 90px; text-align:center; }
+  header{ margin-bottom:20px; }
+  h1{ font-size:clamp(28px, 4.5vw, 40px); margin-bottom:10px; }
+  .sub{ margin:0 auto; }
+
+  .round-label{
+    margin:28px 0 4px; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mute);
+  }
+  .match-label{
+    margin-bottom:14px; font-size:11px; color:var(--text-mute);
+  }
+
+  .duel-stage{
+    display:flex; align-items:center; justify-content:center; gap:18px; margin:10px auto;
+  }
+  .duel-card{
+    width:min(220px, 38vw); cursor:pointer; background:var(--panel); border:1px solid var(--border);
+    overflow:hidden; transition:border-color .15s;
+  }
+  .duel-card:hover{ border-color:var(--gold); }
+  .duel-card .poster{
+    aspect-ratio:2/3; background:var(--panel-2) center/cover no-repeat; position:relative;
+  }
+  .duel-card .poster img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .duel-card .no-poster{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:10px; font-family:'Spectral', serif; font-size:13px; color:var(--text-mute);
+  }
+  .duel-card h3{
+    font-family:'Spectral', serif; font-weight:600; font-size:14.5px; color:var(--text); margin:0; padding:10px 12px;
+    line-height:1.3;
+  }
+
+  .vs{ font-family:'Spectral', serif; font-weight:700; font-size:20px; color:var(--gold-bright); flex:0 0 auto; }
+
+  @keyframes flyOutLeft{ to{ transform:translateX(-160%) rotate(-18deg); opacity:0; } }
+  @keyframes flyOutRight{ to{ transform:translateX(160%) rotate(18deg); opacity:0; } }
+  @keyframes fadeInUp{ from{ transform:translateY(16px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+  @keyframes winnerPulse{
+    0%{ transform:scale(1); box-shadow:0 0 0 rgba(224,187,125,0); }
+    50%{ transform:scale(1.06); box-shadow:0 0 30px rgba(224,187,125,0.5); border-color:var(--gold-bright); }
+    100%{ transform:scale(1); box-shadow:0 0 0 rgba(224,187,125,0); }
+  }
+  .duel-card.fly-out-left{ animation:flyOutLeft .45s ease forwards; pointer-events:none; }
+  .duel-card.fly-out-right{ animation:flyOutRight .45s ease forwards; pointer-events:none; }
+  .duel-card.fade-in{ animation:fadeInUp .4s ease; }
+  .duel-card.winner-pulse{ animation:winnerPulse .5s ease; }
+
+  .bracket-progress{
+    margin-top:28px; text-align:left; max-width:480px; margin-left:auto; margin-right:auto;
+    background:var(--panel); border:1px solid var(--border); padding:16px 20px;
+  }
+  .bracket-progress h4{ font-family:'Spectral', serif; font-size:13px; color:var(--gold-bright); margin:0 0 10px; text-transform:uppercase; letter-spacing:0.05em; }
+  .bracket-row{ display:flex; justify-content:space-between; font-size:12.5px; padding:5px 0; border-bottom:1px solid var(--border); color:var(--text-dim); }
+  .bracket-row:last-child{ border-bottom:none; }
+  .bracket-row .win{ color:var(--gold-bright); font-weight:600; }
+  .bracket-row .lose{ text-decoration:line-through; opacity:0.5; }
+  .bracket-row .pending{ opacity:0.6; }
+
+  .duel-final{
+    margin-top:30px; padding:28px; background:var(--panel); border:1px solid var(--gold-bright);
+    box-shadow:0 0 30px rgba(224,187,125,0.18);
+  }
+  .duel-final h2{ font-family:'Spectral', serif; font-weight:600; font-size:14px; color:var(--text-mute); margin:0 0 12px; text-transform:uppercase; letter-spacing:0.05em; }
+  .duel-final .poster{
+    width:150px; aspect-ratio:2/3; margin:0 auto 14px; background:var(--panel-2) center/cover no-repeat; position:relative;
+  }
+  .duel-final .poster img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .duel-final .title{ font-family:'Spectral', serif; font-weight:700; font-size:22px; color:var(--gold-bright); }
+
+  .restart-btn{
+    display:inline-block; margin-top:20px; background:var(--gold); border:1px solid var(--gold); color:#1b1610;
+    padding:11px 28px; font-size:13px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s;
+  }
+  .restart-btn:hover{ background:var(--gold-bright); }
+
+  .chat-vote-row{ margin-top:22px; }
+  .chat-vote-btn{
+    display:inline-block; background:var(--panel); border:1px solid var(--gold); color:var(--gold-bright);
+    padding:11px 26px; font-size:12.5px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s, color .15s;
+  }
+  .chat-vote-btn:hover{ background:var(--gold); color:#1b1610; }
+  .chat-vote-btn:disabled{ opacity:0.5; cursor:default; }
+  .chat-vote-status{
+    margin-top:12px; font-size:13px; color:var(--text-dim); min-height:20px;
+  }
+  .chat-vote-status strong{ color:var(--gold-bright); }
+
+  @media (max-width:520px){
+    .duel-stage{ gap:8px; }
+    .vs{ font-size:14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">yarosfactory · ярос</div>
+    <h1>Плей-офф</h1>
+    <p class="sub">Турнірна сітка: пари грають по черзі, переможці виходять у наступний раунд.</p>
+    <nav class="pagenav">
+      <a href="wishlist.html">← Побажання</a>
+      <a href="duel.html">Дуель →</a>
+    </nav>
+    <div id="authWidget"></div>
+  </header>
+
+  <div id="duelSection">
+    <div class="round-label" id="roundLabel"></div>
+    <div class="match-label" id="matchLabel"></div>
+    <div class="duel-stage" id="duelStage"></div>
+    <div class="chat-vote-row" id="chatVoteRow" style="display:none;">
+      <button type="button" class="chat-vote-btn" id="chatVoteBtn">🗳️ Голосування чатом (15с)</button>
+      <div class="chat-vote-status" id="chatVoteStatus"></div>
+    </div>
+    <div class="bracket-progress" id="bracketProgress" style="display:none;">
+      <h4>Цей раунд</h4>
+      <div id="bracketRows"></div>
+    </div>
+  </div>
+  <div class="empty-mini" id="emptyMsg" style="display:none;">Ще замало схвалених побажань для плей-офф (потрібно хоча б два).</div>
+
+  <footer>оновлюється вручну · movies.json</footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="common.js"></script>
+<script>
+const duelSection = document.getElementById('duelSection');
+const emptyMsg = document.getElementById('emptyMsg');
+const roundLabel = document.getElementById('roundLabel');
+const matchLabel = document.getElementById('matchLabel');
+const duelStage = document.getElementById('duelStage');
+const bracketProgress = document.getElementById('bracketProgress');
+const bracketRows = document.getElementById('bracketRows');
+
+let allItems = [];
+let roundItems = [];      // учасники поточного раунду (ще не розбиті на пари)
+let roundPairs = [];      // пари цього раунду: [[a,b], [c,d], ...] (b може бути null = бай)
+let roundResults = [];    // результат по кожній парі цього раунду (null поки не зіграно)
+let pairIdx = 0;          // яка пара зараз грає
+let roundNum = 1;
+let totalRounds = 1;
+let locked = false;
+let started = false;
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function posterHtml(it){
+  return it.poster
+    ? `<img src="${escapeHtml(it.poster)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(it.title||'')}</div>'">`
+    : `<div class="no-poster">${escapeHtml(it.title || '')}</div>`;
+}
+
+function startTournament(items){
+  allItems = items;
+  roundItems = shuffle(items);
+  roundNum = 1;
+  totalRounds = Math.max(1, Math.ceil(Math.log2(items.length)));
+  started = true;
+  beginRound();
+  chatVoteStatus.textContent = '';
+  updateChatVoteVisibility();
+}
+
+function beginRound(){
+  roundPairs = [];
+  for(let i = 0; i < roundItems.length; i += 2){
+    roundPairs.push([roundItems[i], roundItems[i+1] || null]); // null = бай (проходить без гри)
+  }
+  roundResults = roundPairs.map(() => null);
+  pairIdx = 0;
+  playNextPair();
+}
+
+function playNextPair(){
+  // авто-проходження байів
+  while(pairIdx < roundPairs.length && roundPairs[pairIdx][1] === null){
+    roundResults[pairIdx] = roundPairs[pairIdx][0];
+    pairIdx++;
+  }
+
+  if(pairIdx >= roundPairs.length){
+    finishRound();
+    return;
+  }
+
+  renderBracketProgress();
+  renderMatch();
+}
+
+function renderMatch(){
+  const [a, b] = roundPairs[pairIdx];
+  roundLabel.textContent = `Раунд ${roundNum} з ${totalRounds}`;
+  matchLabel.textContent = `Пара ${pairIdx + 1} з ${roundPairs.length}`;
+  duelStage.innerHTML =
+    `<div class="duel-card fade-in" data-side="a">
+      <div class="poster">${posterHtml(a)}</div>
+      <h3>${escapeHtml(a.title || '')}</h3>
+    </div>
+    <div class="vs">VS</div>
+    <div class="duel-card fade-in" data-side="b">
+      <div class="poster">${posterHtml(b)}</div>
+      <h3>${escapeHtml(b.title || '')}</h3>
+    </div>`;
+
+  duelStage.querySelectorAll('.duel-card').forEach(card => {
+    card.addEventListener('click', () => pickWinner(card.dataset.side));
+  });
+}
+
+function pickWinner(side){
+  if(locked) return;
+  locked = true;
+
+  const [a, b] = roundPairs[pairIdx];
+  const winner = side === 'a' ? a : b;
+  const winnerCard = duelStage.querySelector(`[data-side="${side}"]`);
+  const loserCard = duelStage.querySelector(`[data-side="${side === 'a' ? 'b' : 'a'}"]`);
+
+  winnerCard.classList.add('winner-pulse');
+  loserCard.classList.add(side === 'a' ? 'fly-out-right' : 'fly-out-left');
+
+  roundResults[pairIdx] = winner;
+  renderBracketProgress();
+
+  setTimeout(() => {
+    locked = false;
+    pairIdx++;
+    playNextPair();
+  }, 460);
+}
+
+function renderBracketProgress(){
+  if(roundPairs.length < 2){
+    bracketProgress.style.display = 'none';
+    return;
+  }
+  bracketProgress.style.display = '';
+  bracketRows.innerHTML = roundPairs.map((pair, i) => {
+    const [a, b] = pair;
+    const result = roundResults[i];
+    if(b === null){
+      return `<div class="bracket-row"><span class="win">${escapeHtml(a.title||'')}</span><span>прохід без гри</span></div>`;
+    }
+    if(result){
+      const aClass = result === a ? 'win' : 'lose';
+      const bClass = result === b ? 'win' : 'lose';
+      return `<div class="bracket-row"><span class="${aClass}">${escapeHtml(a.title||'')}</span><span class="${bClass}">${escapeHtml(b.title||'')}</span></div>`;
+    }
+    return `<div class="bracket-row pending"><span>${escapeHtml(a.title||'')}</span><span>${escapeHtml(b.title||'')}</span></div>`;
+  }).join('');
+}
+
+function finishRound(){
+  const winners = roundResults.filter(Boolean);
+  if(winners.length <= 1){
+    showFinal(winners[0] || allItems[0]);
+    return;
+  }
+  roundItems = shuffle(winners);
+  roundNum++;
+  beginRound();
+}
+
+function showFinal(winner){
+  roundLabel.textContent = '';
+  matchLabel.textContent = '';
+  bracketProgress.style.display = 'none';
+  chatVoteRow.style.display = 'none';
+  duelStage.innerHTML = `
+    <div class="duel-final">
+      <h2>Чемпіон плей-офф</h2>
+      <div class="poster">${posterHtml(winner)}</div>
+      <div class="title">${escapeHtml(winner.title || '')}</div>
+      <button type="button" class="restart-btn" id="restartBtn">Ще раз</button>
+    </div>
+  `;
+  document.getElementById('restartBtn').addEventListener('click', () => startTournament(allItems));
+}
+
+/* ---- Голосування чатом (тільки для тебе) ---- */
+const chatVoteRow = document.getElementById('chatVoteRow');
+const chatVoteBtn = document.getElementById('chatVoteBtn');
+const chatVoteStatus = document.getElementById('chatVoteStatus');
+let isOwner = false;
+let voting = false;
+
+function updateChatVoteVisibility(){
+  chatVoteRow.style.display = isOwner ? '' : 'none';
+}
+
+function startChatVote(){
+  if(voting || locked) return;
+  const [a, b] = roundPairs[pairIdx] || [];
+  if(!a || !b) return; // немає активної пари (бай або кінець)
+  voting = true;
+  chatVoteBtn.disabled = true;
+
+  let count1 = 0, count2 = 0;
+  const seenUsers = new Set();
+  let remaining = 15;
+  const channel = TWITCH_OWNER_LOGIN.toLowerCase();
+  const nick = 'justinfan' + Math.floor(10000 + Math.random() * 89999);
+
+  let ws;
+  try{
+    ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+  }catch(err){
+    chatVoteStatus.textContent = 'Не вдалося підключитись до чату.';
+    voting = false;
+    chatVoteBtn.disabled = false;
+    return;
+  }
+
+  function updateStatus(){
+    chatVoteStatus.innerHTML = `⏱ ${remaining}с · пиши <strong>1</strong> за «${escapeHtml(a.title||'')}» або <strong>2</strong> за «${escapeHtml(b.title||'')}» · 1: ${count1} · 2: ${count2}`;
+  }
+
+  ws.onopen = () => {
+    ws.send('NICK ' + nick);
+    ws.send('JOIN #' + channel);
+    updateStatus();
+  };
+
+  ws.onmessage = (e) => {
+    const lines = e.data.split('\r\n').filter(Boolean);
+    lines.forEach(line => {
+      if(line.startsWith('PING')){ ws.send('PONG :tmi.twitch.tv'); return; }
+      const m = line.match(/^:([^!]+)!\S+ PRIVMSG #\S+ :(.*)$/);
+      if(!m) return;
+      const user = m[1].toLowerCase();
+      const text = m[2].trim();
+      if(seenUsers.has(user)) return;
+      if(text === '1'){ count1++; seenUsers.add(user); updateStatus(); }
+      else if(text === '2'){ count2++; seenUsers.add(user); updateStatus(); }
+    });
+  };
+
+  ws.onerror = () => {
+    chatVoteStatus.textContent = 'Помилка з\'єднання з чатом.';
+  };
+
+  const timer = setInterval(() => {
+    remaining--;
+    if(remaining <= 0){
+      clearInterval(timer);
+      finishVote();
+    } else {
+      updateStatus();
+    }
+  }, 1000);
+
+  function finishVote(){
+    try{ ws.close(); }catch(err){}
+    voting = false;
+    chatVoteBtn.disabled = false;
+    const side = count1 === count2 ? (Math.random() < 0.5 ? 'a' : 'b') : (count1 > count2 ? 'a' : 'b');
+    const winnerTitle = (side === 'a' ? a : b).title || '';
+    chatVoteStatus.innerHTML = `Голосування завершено — перемагає «${escapeHtml(winnerTitle)}» (${count1}:${count2})`;
+    pickWinner(side);
+  }
+}
+
+chatVoteBtn.addEventListener('click', startChatVote);
+
+function loadSuggestions(){
+  if(!firebaseReady){
+    emptyMsg.textContent = 'Список тимчасово недоступний.';
+    emptyMsg.style.display = '';
+    duelSection.style.display = 'none';
+    return;
+  }
+  db.collection('suggestions').where('status', '==', 'approved')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snap => {
+      const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      if(list.length < 2){
+        duelSection.style.display = 'none';
+        emptyMsg.style.display = '';
+        return;
+      }
+      duelSection.style.display = '';
+      emptyMsg.style.display = 'none';
+      if(!started) startTournament(list);
+    }, err => {
+      emptyMsg.textContent = 'Помилка завантаження: ' + err.message;
+      emptyMsg.style.display = '';
+      duelSection.style.display = 'none';
+    });
+}
+
+async function setupAuth(){
+  await initAuth(document.getElementById('authWidget'));
+  const user = getTwitchUser();
+  isOwner = !!(user && user.login === TWITCH_OWNER_LOGIN);
+  updateChatVoteVisibility();
+}
+
+setupAuth();
+loadSuggestions();
+</script>
+
+</body>
+</html>
