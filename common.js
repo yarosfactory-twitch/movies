@@ -130,7 +130,7 @@ const GH_LS_KEYS = { token:'am_gh_token', owner:'am_gh_owner', repo:'am_gh_repo'
 
 function ghSettings(){
   return {
-    token: localStorage.getItem(GH_LS_KEYS.token) || 'w30prbyn4afxt1d1j3n7d1lxttrpub',
+    token: localStorage.getItem(GH_LS_KEYS.token) || '',
     owner: localStorage.getItem(GH_LS_KEYS.owner) || 'yarosfactory-twitch',
     repo: localStorage.getItem(GH_LS_KEYS.repo) || 'movies',
     path: localStorage.getItem(GH_LS_KEYS.path) || 'movies.json',
@@ -192,7 +192,7 @@ async function commitMoviesArray(transformFn, commitMessage, onRetry, maxAttempt
 }
 
 /* ---- Twitch-логін (Implicit OAuth, без бекенда) ---- */
-const TWITCH_CLIENT_ID = "ВСТАВ_СЮДИ_TWITCH_CLIENT_ID";
+const TWITCH_CLIENT_ID = "w30prbyn4afxt1d1j3n7d1lxttrpub";
 const TWITCH_OWNER_LOGIN = "yarosfactory";
 
 /* ---- TMDB (пошук фільмів для форми пропозицій) ---- */
@@ -227,6 +227,49 @@ async function tmdbGetMovieDetails(id){
     genre: (data.genres || []).map(g => g.name),
     note: data.overview || ''
   };
+}
+
+async function tmdbFindId(title, year){
+  const results = await tmdbSearchMovies(title);
+  if(!results.length) return null;
+  if(year){
+    const exact = results.find(r => r.year === year);
+    if(exact) return exact.id;
+  }
+  return results[0].id;
+}
+
+async function tmdbGetTrailerKey(id){
+  let url = `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=uk-UA`;
+  let res = await fetch(url);
+  if(!res.ok) throw new Error('Помилка TMDB (' + res.status + ')');
+  let data = await res.json();
+  let pick = (data.results || []).find(v => v.site === 'YouTube' && v.type === 'Trailer')
+    || (data.results || []).find(v => v.site === 'YouTube');
+  if(!pick){
+    // українських трейлерів часто нема — пробуємо англійською
+    url = `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=en-US`;
+    res = await fetch(url);
+    if(res.ok){
+      data = await res.json();
+      pick = (data.results || []).find(v => v.site === 'YouTube' && v.type === 'Trailer')
+        || (data.results || []).find(v => v.site === 'YouTube');
+    }
+  }
+  return pick ? pick.key : null;
+}
+
+async function tmdbGetRecommendations(id){
+  const url = `https://api.themoviedb.org/3/movie/${id}/recommendations?api_key=${TMDB_API_KEY}&language=uk-UA`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('Помилка TMDB (' + res.status + ')');
+  const data = await res.json();
+  return (data.results || []).map(r => ({
+    id: r.id,
+    title: r.title || r.original_title || '',
+    year: r.release_date ? parseInt(r.release_date.slice(0, 4), 10) : null,
+    poster: r.poster_path ? TMDB_IMG_BASE + r.poster_path : ''
+  }));
 }
 
 function twitchRedirectUri(){
