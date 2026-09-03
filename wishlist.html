@@ -207,14 +207,18 @@ function normalizeTitle(t){
     .trim();
 }
 
-function watchCount(title){
+function watchCount(title, year){
   const norm = normalizeTitle(title);
   if(!norm) return 0;
-  return existingMovies.filter(m => normalizeTitle(m.title) === norm).length;
+  return existingMovies.filter(m => {
+    if(normalizeTitle(m.title) !== norm) return false;
+    if(year && m.year) return m.year === year; // однакова назва, але інший рік — це інший фільм
+    return true;
+  }).length;
 }
 
-function eyeBadgeHtml(title){
-  const count = watchCount(title);
+function eyeBadgeHtml(title, year){
+  const count = watchCount(title, year);
   if(count === 0) return '';
   return `<span class="eye-badge" title="Вже дивились ${count} раз(и)">👁 ${count}</span>`;
 }
@@ -259,7 +263,7 @@ wishInput.addEventListener('input', () => {
           <div class="tmdb-result" data-idx="${i}">
             ${thumb}
             <div><div class="tr-title">${escapeHtml(r.title)}</div><div class="tr-year">${r.year || ''}</div></div>
-            ${eyeBadgeHtml(r.title)}
+            ${eyeBadgeHtml(r.title, r.year)}
           </div>
         `;
       }).join('');
@@ -291,7 +295,7 @@ function renderSelected(){
       <div class="ws-title">${escapeHtml(selectedMovie.title)}</div>
       <div class="ws-year">${selectedMovie.year || ''}</div>
     </div>
-    ${eyeBadgeHtml(selectedMovie.title)}
+    ${eyeBadgeHtml(selectedMovie.title, selectedMovie.year)}
     <button type="button" class="ws-clear" id="wsClearBtn">Змінити</button>
   `;
   wishSelected.style.display = 'flex';
