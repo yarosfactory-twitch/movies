@@ -207,6 +207,8 @@ function pickWinner(side){
 
   winnerCard.classList.add('winner-pulse');
   loserCard.classList.add(loserSide === 'left' ? 'fly-out-left' : 'fly-out-right');
+  playSfx('whoosh', 0.5);
+  playSfx('win', 0.5);
 
   const winner = side === 'left' ? leftItem : rightItem;
 
@@ -249,6 +251,7 @@ function renderStageKeepWinner(winnerSide, loserSide){
 function showFinal(winner){
   roundLabel.textContent = '';
   chatVoteRow.style.display = 'none';
+  playSfx('fanfare', 0.6);
   duelStage.innerHTML = `
     <div class="duel-final">
       <h2>Переможець дуелі</h2>
