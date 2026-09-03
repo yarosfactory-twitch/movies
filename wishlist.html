@@ -81,7 +81,13 @@
   #submitPanel button.manual-toggle-btn:hover{ background:none; color:var(--gold-bright); }
   #wishManualForm{ margin-top:10px; }
 
-  #wishSubmitBtn{ margin-top:14px; width:100%; }
+  #submitPanel #wishSubmitBtn{
+    margin-top:14px; width:100%; background:var(--panel); border:1px solid var(--gold); color:var(--gold-bright);
+    padding:14px; font-size:13px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s, color .15s;
+  }
+  #submitPanel #wishSubmitBtn:hover{ background:var(--gold); color:#1b1610; }
+  #submitPanel #wishSubmitBtn:disabled{ opacity:0.5; cursor:default; }
   .hint{ font-size:11px; color:var(--text-mute); margin-top:8px; }
   .submit-status{ margin-top:12px; padding:10px 12px; font-size:13px; display:none; }
   .submit-status.show{ display:block; }
