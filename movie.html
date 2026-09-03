@@ -248,7 +248,7 @@ function renderMovie(m){
 const trailerBlock = document.getElementById('trailerBlock');
 const similarBlock = document.getElementById('similarBlock');
 
-function setupDragScroll(el){
+function setupDragScroll(el, cardSelector){
   if(!el) return;
   let isDown = false;
   let startX = 0;
@@ -258,6 +258,7 @@ function setupDragScroll(el){
   let lastX = 0;
   let lastT = 0;
   let momentumRAF = null;
+  let downTarget = null;
 
   function stopMomentum(){
     if(momentumRAF) cancelAnimationFrame(momentumRAF);
@@ -273,6 +274,7 @@ function setupDragScroll(el){
     lastX = e.clientX;
     lastT = performance.now();
     velocity = 0;
+    downTarget = e.target;
     el.classList.add('dragging');
     try{ el.setPointerCapture(e.pointerId); }catch(err){}
   });
@@ -296,6 +298,19 @@ function setupDragScroll(el){
     if(!isDown) return;
     isDown = false;
     el.classList.remove('dragging');
+
+    // це був звичайний клік (без перетягування) — переходимо на картку самі,
+    // не покладаючись на нативний click (він тут ненадійний через pointer capture)
+    if(!moved && cardSelector && downTarget){
+      if(!downTarget.closest('a')){
+        const card = downTarget.closest(cardSelector);
+        if(card && card.dataset.href){
+          window.location.href = card.dataset.href;
+          return;
+        }
+      }
+    }
+
     // невелика інерція після відпускання
     let v = velocity;
     function step(){
@@ -305,19 +320,11 @@ function setupDragScroll(el){
       momentumRAF = requestAnimationFrame(step);
     }
     if(Math.abs(v) > 0.02) momentumRAF = requestAnimationFrame(step);
-    setTimeout(() => { moved = false; }, 0);
   }
 
   el.addEventListener('pointerup', endDrag);
-  el.addEventListener('pointercancel', endDrag);
-  el.addEventListener('pointerleave', () => { if(isDown) endDrag(); });
-
-  el.addEventListener('click', (e) => {
-    if(moved){
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }, true);
+  el.addEventListener('pointercancel', () => { isDown = false; el.classList.remove('dragging'); });
+  el.addEventListener('pointerleave', () => { if(isDown){ isDown = false; el.classList.remove('dragging'); } });
 }
 
 async function loadTrailerAndSimilar(m){
@@ -394,13 +401,7 @@ async function loadSimilar(tmdbId){
         </div>
       </div>
     `;
-    setupDragScroll(similarBlock.querySelector('.similar-strip'));
-    similarBlock.querySelectorAll('.similar-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        if(e.target.closest('a')) return; // клік на "Запропонувати" — не заважаємо
-        window.location.href = card.dataset.href;
-      });
-    });
+    setupDragScroll(similarBlock.querySelector('.similar-strip'), '.similar-card');
   }catch(err){
     console.warn('Не вдалося завантажити схожі фільми:', err.message);
   }
