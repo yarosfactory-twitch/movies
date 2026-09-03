@@ -114,6 +114,11 @@ async function render(){
     ? `<img src="${escapeHtml(poster)}" alt="${escapeHtml(title)}">`
     : `<div class="no-poster">${escapeHtml(title)}</div>`;
 
+  const suggestHref = 'wishlist.html?title=' + encodeURIComponent(title)
+    + '&year=' + encodeURIComponent(year || '')
+    + '&poster=' + encodeURIComponent(poster || '')
+    + '&tmdbId=' + encodeURIComponent(tmdbId || '');
+
   content.innerHTML = `
     <div class="movie-hero">
       <div class="movie-poster">${posterInner}</div>
@@ -123,6 +128,7 @@ async function render(){
         <div class="movie-meta">${year || ''}${year && genre ? ' · ' : ''}<span class="genre">${escapeHtml(genre)}</span></div>
         ${wanted ? `<div class="ordered-by">Хоче переглянути: <a href="https://www.twitch.tv/${encodeURIComponent(wanted)}" target="_blank" rel="noopener">${escapeHtml(wanted)}</a></div>` : ''}
         ${note ? `<p class="movie-note">${escapeHtml(note)}</p>` : `<p class="no-desc-note">Опису поки нема.</p>`}
+        <a class="trailer-btn" href="${suggestHref}" style="margin-top:18px; text-decoration:none;">➕ Додати в побажане</a>
         <div class="trailer-wrap" id="trailerWrap"></div>
       </div>
     </div>
