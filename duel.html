@@ -86,6 +86,19 @@
   }
   .restart-btn:hover{ background:var(--gold-bright); }
 
+  .chat-vote-row{ margin-top:22px; }
+  .chat-vote-btn{
+    display:inline-block; background:var(--panel); border:1px solid var(--gold); color:var(--gold-bright);
+    padding:11px 26px; font-size:12.5px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s, color .15s;
+  }
+  .chat-vote-btn:hover{ background:var(--gold); color:#1b1610; }
+  .chat-vote-btn:disabled{ opacity:0.5; cursor:default; }
+  .chat-vote-status{
+    margin-top:12px; font-size:13px; color:var(--text-dim); min-height:20px;
+  }
+  .chat-vote-status strong{ color:var(--gold-bright); }
+
   @media (max-width:520px){
     .duel-stage{ gap:8px; }
     .vs{ font-size:14px; }
@@ -108,6 +121,10 @@
   <div id="duelSection">
     <div class="round-label" id="roundLabel"></div>
     <div class="duel-stage" id="duelStage"></div>
+    <div class="chat-vote-row" id="chatVoteRow" style="display:none;">
+      <button type="button" class="chat-vote-btn" id="chatVoteBtn">🗳️ Голосування чатом (15с)</button>
+      <div class="chat-vote-status" id="chatVoteStatus"></div>
+    </div>
   </div>
   <div class="empty-mini" id="emptyMsg" style="display:none;">Ще замало схвалених побажань для дуелі (потрібно хоча б два).</div>
 
@@ -157,6 +174,8 @@ function startTournament(items){
   matchNum = 1;
   started = true;
   renderStage();
+  chatVoteStatus.textContent = '';
+  updateChatVoteVisibility();
 }
 
 function renderStage(){
@@ -228,6 +247,7 @@ function renderStageKeepWinner(winnerSide, loserSide){
 
 function showFinal(winner){
   roundLabel.textContent = '';
+  chatVoteRow.style.display = 'none';
   duelStage.innerHTML = `
     <div class="duel-final">
       <h2>Переможець дуелі</h2>
@@ -238,6 +258,89 @@ function showFinal(winner){
   `;
   document.getElementById('restartBtn').addEventListener('click', () => startTournament(allItems));
 }
+
+/* ---- Голосування чатом (тільки для тебе) ---- */
+const chatVoteRow = document.getElementById('chatVoteRow');
+const chatVoteBtn = document.getElementById('chatVoteBtn');
+const chatVoteStatus = document.getElementById('chatVoteStatus');
+let isOwner = false;
+let voting = false;
+
+function updateChatVoteVisibility(){
+  chatVoteRow.style.display = isOwner ? '' : 'none';
+}
+
+function startChatVote(){
+  if(voting || locked) return;
+  voting = true;
+  chatVoteBtn.disabled = true;
+
+  let count1 = 0, count2 = 0;
+  const seenUsers = new Set(); // один глядач — один голос
+  let remaining = 15;
+  const channel = TWITCH_OWNER_LOGIN.toLowerCase();
+  const nick = 'justinfan' + Math.floor(10000 + Math.random() * 89999);
+
+  let ws;
+  try{
+    ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+  }catch(err){
+    chatVoteStatus.textContent = 'Не вдалося підключитись до чату.';
+    voting = false;
+    chatVoteBtn.disabled = false;
+    return;
+  }
+
+  function updateStatus(){
+    chatVoteStatus.innerHTML = `⏱ ${remaining}с · пиши <strong>1</strong> за «${escapeHtml(leftItem.title||'')}» або <strong>2</strong> за «${escapeHtml(rightItem.title||'')}» · 1: ${count1} · 2: ${count2}`;
+  }
+
+  ws.onopen = () => {
+    ws.send('NICK ' + nick);
+    ws.send('JOIN #' + channel);
+    updateStatus();
+  };
+
+  ws.onmessage = (e) => {
+    const lines = e.data.split('\r\n').filter(Boolean);
+    lines.forEach(line => {
+      if(line.startsWith('PING')){ ws.send('PONG :tmi.twitch.tv'); return; }
+      const m = line.match(/^:([^!]+)!\S+ PRIVMSG #\S+ :(.*)$/);
+      if(!m) return;
+      const user = m[1].toLowerCase();
+      const text = m[2].trim();
+      if(seenUsers.has(user)) return;
+      if(text === '1'){ count1++; seenUsers.add(user); updateStatus(); }
+      else if(text === '2'){ count2++; seenUsers.add(user); updateStatus(); }
+    });
+  };
+
+  ws.onerror = () => {
+    chatVoteStatus.textContent = 'Помилка з\'єднання з чатом.';
+  };
+
+  const timer = setInterval(() => {
+    remaining--;
+    if(remaining <= 0){
+      clearInterval(timer);
+      finishVote();
+    } else {
+      updateStatus();
+    }
+  }, 1000);
+
+  function finishVote(){
+    try{ ws.close(); }catch(err){}
+    voting = false;
+    chatVoteBtn.disabled = false;
+    const winnerSide = count1 === count2 ? (Math.random() < 0.5 ? 'left' : 'right') : (count1 > count2 ? 'left' : 'right');
+    const winnerTitle = (winnerSide === 'left' ? leftItem : rightItem).title || '';
+    chatVoteStatus.innerHTML = `Голосування завершено — перемагає «${escapeHtml(winnerTitle)}» (${count1}:${count2})`;
+    pickWinner(winnerSide);
+  }
+}
+
+chatVoteBtn.addEventListener('click', startChatVote);
 
 function loadSuggestions(){
   if(!firebaseReady){
@@ -265,7 +368,14 @@ function loadSuggestions(){
     });
 }
 
-initAuth(document.getElementById('authWidget'));
+async function setupAuth(){
+  await initAuth(document.getElementById('authWidget'));
+  const user = getTwitchUser();
+  isOwner = !!(user && user.login === TWITCH_OWNER_LOGIN);
+  updateChatVoteVisibility();
+}
+
+setupAuth();
 loadSuggestions();
 </script>
 
