@@ -76,7 +76,8 @@
   .similar-strip::-webkit-scrollbar{ display:none; }
   .similar-strip.dragging{ cursor:grabbing; }
   .similar-strip img{ -webkit-user-drag:none; user-drag:none; pointer-events:none; }
-  .similar-card{ flex:0 0 auto; width:130px; background:var(--panel); border:1px solid var(--border); }
+  .similar-card{ flex:0 0 auto; width:130px; background:var(--panel); border:1px solid var(--border); cursor:pointer; transition:border-color .15s; }
+  .similar-card:hover{ border-color:var(--gold); }
   .similar-card .poster{ aspect-ratio:2/3; background:var(--panel-2) center/cover no-repeat; position:relative; }
   .similar-card .poster img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .similar-card .no-poster{
@@ -375,8 +376,12 @@ async function loadSimilar(tmdbId){
               + '&year=' + encodeURIComponent(r.year || '')
               + '&poster=' + encodeURIComponent(r.poster || '')
               + '&tmdbId=' + encodeURIComponent(r.id);
+            const detailHref = 'wish-detail.html?title=' + encodeURIComponent(r.title || '')
+              + '&year=' + encodeURIComponent(r.year || '')
+              + '&poster=' + encodeURIComponent(r.poster || '')
+              + '&tmdbId=' + encodeURIComponent(r.id);
             return `
-              <div class="similar-card">
+              <div class="similar-card" data-href="${detailHref}">
                 <div class="poster">${posterInner}</div>
                 <div class="si-info">
                   <h4>${escapeHtml(r.title)}</h4>
@@ -390,6 +395,12 @@ async function loadSimilar(tmdbId){
       </div>
     `;
     setupDragScroll(similarBlock.querySelector('.similar-strip'));
+    similarBlock.querySelectorAll('.similar-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if(e.target.closest('a')) return; // клік на "Запропонувати" — не заважаємо
+        window.location.href = card.dataset.href;
+      });
+    });
   }catch(err){
     console.warn('Не вдалося завантажити схожі фільми:', err.message);
   }
