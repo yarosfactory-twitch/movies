@@ -295,6 +295,7 @@ fetch('movies.json')
 
 // prefill from a wishlist "Опублікувати" link (title/year/poster only — date and замовник stay empty on purpose)
 let usedSuggestionId = null;
+let pickedTmdbId = null;
 
 const tmdbSearchInput = document.getElementById('tmdbSearchInput');
 const tmdbSearchResults = document.getElementById('tmdbSearchResults');
@@ -331,6 +332,7 @@ tmdbSearchInput.addEventListener('input', () => {
       tmdbSearchResults.querySelectorAll('.tmdb-result').forEach(el => {
         el.addEventListener('click', async () => {
           const picked = results[parseInt(el.dataset.idx, 10)];
+          pickedTmdbId = picked.id;
           document.getElementById('fTitle').value = picked.title || '';
           if(picked.year) document.getElementById('fYear').value = picked.year;
           if(picked.poster) document.getElementById('fPoster').value = picked.poster;
@@ -362,6 +364,7 @@ tmdbSearchInput.addEventListener('input', () => {
   if(params.get('poster')) document.getElementById('fPoster').value = params.get('poster');
   if(params.get('genre')) document.getElementById('fGenre').value = params.get('genre');
   if(params.get('note')) document.getElementById('fNote').value = params.get('note');
+  if(params.get('tmdbId')) pickedTmdbId = parseInt(params.get('tmdbId'), 10);
   if(params.get('sid')) usedSuggestionId = params.get('sid');
   document.getElementById('fWatched').focus();
 })();
@@ -572,6 +575,7 @@ form.addEventListener('submit', async (e) => {
   if(note) movie.note = note;
   if(poster) movie.poster = poster;
   if(orderedBy) movie.orderedBy = orderedBy;
+  if(pickedTmdbId) movie.tmdbId = pickedTmdbId;
 
   submitBtn.disabled = true;
   submitBtn.textContent = 'Зберігаю…';
@@ -593,6 +597,7 @@ form.addEventListener('submit', async (e) => {
     }
 
     form.reset();
+    pickedTmdbId = null;
     document.getElementById('alsoTelegram').checked = true;
     watchedInput.value = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
   }catch(err){
