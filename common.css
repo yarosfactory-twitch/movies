@@ -190,7 +190,8 @@ h1{
 
 /* ---------- Wishlist cards (wishlist.html, my-wishlist.html) ---------- */
 .wish-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:18px 14px; }
-.wish-card{ background:var(--panel); border:1px solid var(--border); overflow:hidden; }
+.wish-card{ background:var(--panel); border:1px solid var(--border); overflow:hidden; cursor:pointer; transition:border-color .15s; }
+.wish-card:hover{ border-color:var(--gold); }
 .wish-poster{
   aspect-ratio:2/3; background:var(--panel-2) center/cover no-repeat; position:relative;
 }
