@@ -281,6 +281,8 @@ let usedSuggestionId = null;
   document.getElementById('fTitle').value = title;
   if(params.get('year')) document.getElementById('fYear').value = params.get('year');
   if(params.get('poster')) document.getElementById('fPoster').value = params.get('poster');
+  if(params.get('genre')) document.getElementById('fGenre').value = params.get('genre');
+  if(params.get('note')) document.getElementById('fNote').value = params.get('note');
   if(params.get('sid')) usedSuggestionId = params.get('sid');
   document.getElementById('fWatched').focus();
 })();
