@@ -243,6 +243,8 @@ function pickWinner(side){
 
   winnerCard.classList.add('winner-pulse');
   loserCard.classList.add(side === 'a' ? 'fly-out-right' : 'fly-out-left');
+  playSfx('whoosh', 0.5);
+  playSfx('win', 0.5);
 
   roundResults[pairIdx] = winner;
   renderBracketProgress();
@@ -291,6 +293,7 @@ function showFinal(winner){
   matchLabel.textContent = '';
   bracketProgress.style.display = 'none';
   chatVoteRow.style.display = 'none';
+  playSfx('fanfare', 0.6);
   duelStage.innerHTML = `
     <div class="duel-final">
       <h2>Чемпіон плей-офф</h2>
