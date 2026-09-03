@@ -420,6 +420,16 @@ function renderApproved(){
           + '&sid=' + encodeURIComponent(d.id);
       }
 
+      function detailHref(d){
+        return 'wish-detail.html?title=' + encodeURIComponent(d.title || '')
+          + '&year=' + encodeURIComponent(d.year || '')
+          + '&poster=' + encodeURIComponent(d.poster || '')
+          + '&genre=' + encodeURIComponent((d.genre || []).join(', '))
+          + '&note=' + encodeURIComponent(d.note || '')
+          + '&wanted=' + encodeURIComponent(d.wantedBy || '')
+          + '&tmdbId=' + encodeURIComponent(d.tmdbId || '');
+      }
+
       const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       approvedItemsCache = items;
 
@@ -428,7 +438,7 @@ function renderApproved(){
           ? `<img src="${escapeHtml(d.poster)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(d.title || '')}</div>'">`
           : `<div class="no-poster">${escapeHtml(d.title || '')}</div>`;
         return `
-          <div class="wish-card">
+          <div class="wish-card" data-href="${detailHref(d)}">
             <div class="wish-poster">${posterInner}</div>
             <div class="wish-info">
               <h3>${escapeHtml(d.title || '')}</h3>
@@ -439,6 +449,13 @@ function renderApproved(){
           </div>
         `;
       }).join('');
+
+      approvedGrid.querySelectorAll('.wish-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if(e.target.closest('a')) return; // клік на "Опублікувати" — не заважаємо
+          window.location.href = card.dataset.href;
+        });
+      });
     }, err => {
       approvedGrid.innerHTML = `<div class="empty-mini">Помилка завантаження: ${escapeHtml(err.message)}</div>`;
     });
