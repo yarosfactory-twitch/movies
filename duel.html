@@ -19,12 +19,15 @@
     margin:28px 0 10px; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mute);
   }
 
-  .duel-stage{ display:flex; align-items:center; justify-content:center; gap:18px; margin:10px auto; }
+  .duel-stage{
+    display:flex; align-items:center; justify-content:center; gap:18px; margin:10px auto;
+    perspective:800px;
+  }
   .duel-card{
     width:min(220px, 38vw); cursor:pointer; background:var(--panel); border:1px solid var(--border);
-    overflow:hidden; transition:border-color .15s, transform .15s;
+    overflow:hidden; transition:border-color .15s;
   }
-  .duel-card:hover{ border-color:var(--gold); transform:translateY(-4px); }
+  .duel-card:hover{ border-color:var(--gold); }
   .duel-card .poster{
     aspect-ratio:2/3; background:var(--panel-2) center/cover no-repeat; position:relative;
   }
@@ -37,10 +40,29 @@
     font-family:'Spectral', serif; font-weight:600; font-size:14.5px; color:var(--text); margin:0; padding:10px 12px;
     line-height:1.3;
   }
-  .duel-card.winner{ border-color:var(--gold-bright); box-shadow:0 0 24px rgba(224,187,125,0.3); }
-  .duel-card.loser{ opacity:0.35; pointer-events:none; }
+  .duel-card.champion{ border-color:var(--gold-bright); box-shadow:0 0 20px rgba(224,187,125,0.25); }
 
   .vs{ font-family:'Spectral', serif; font-weight:700; font-size:20px; color:var(--gold-bright); flex:0 0 auto; }
+
+  @keyframes flyOutLeft{
+    to{ transform:translateX(-160%) rotate(-18deg); opacity:0; }
+  }
+  @keyframes flyOutRight{
+    to{ transform:translateX(160%) rotate(18deg); opacity:0; }
+  }
+  @keyframes flyInRight{
+    from{ transform:translateX(160%) rotate(14deg); opacity:0; }
+    to{ transform:translateX(0) rotate(0); opacity:1; }
+  }
+  @keyframes championPulse{
+    0%{ transform:scale(1.1); box-shadow:0 0 0 rgba(224,187,125,0); }
+    55%{ box-shadow:0 0 34px rgba(224,187,125,0.55); }
+    100%{ transform:scale(1); box-shadow:0 0 20px rgba(224,187,125,0.25); }
+  }
+  .duel-card.fly-out-left{ animation:flyOutLeft .45s ease forwards; pointer-events:none; }
+  .duel-card.fly-out-right{ animation:flyOutRight .45s ease forwards; pointer-events:none; }
+  .duel-card.fly-in{ animation:flyInRight .45s ease; }
+  .duel-card.pulse-in{ animation:championPulse .5s ease; }
 
   .duel-final{
     margin-top:30px; padding:28px; background:var(--panel); border:1px solid var(--gold-bright);
@@ -72,7 +94,7 @@
   <header>
     <div class="eyebrow">yarosfactory · ярос</div>
     <h1>Дуель фільмів</h1>
-    <p class="sub">Не можеш обрати? Порівнюй парами, доки не лишиться один переможець.</p>
+    <p class="sub">Обирай кращий — переможець лишається і чекає на нового суперника.</p>
     <nav class="pagenav">
       <a href="wishlist.html">← Побажання</a>
     </nav>
@@ -98,11 +120,12 @@ const roundLabel = document.getElementById('roundLabel');
 const duelStage = document.getElementById('duelStage');
 
 let allItems = [];
-let roundQueue = [];   // фільми, що чекають на свою пару в поточному раунді
-let nextRoundQueue = []; // переможці поточного раунду, підуть далі
-let currentPair = null;
-let roundNum = 1;
-let totalRounds = 1;
+let pool = [];       // ще не кинуті виклик претенденти
+let champion = null; // поточний "король гори"
+let challenger = null;
+let matchNum = 0;
+let totalMatches = 0;
+let locked = false;  // блокуємо кліки під час анімації
 let started = false;
 
 function shuffle(arr){
@@ -122,69 +145,68 @@ function posterHtml(it){
 
 function startTournament(items){
   allItems = items;
-  roundQueue = shuffle(items);
-  nextRoundQueue = [];
-  roundNum = 1;
-  totalRounds = Math.max(1, Math.ceil(Math.log2(items.length)));
+  const shuffled = shuffle(items);
+  champion = shuffled[0];
+  pool = shuffled.slice(1);
+  totalMatches = pool.length;
+  matchNum = 0;
   started = true;
-  nextMatch();
-}
 
-function nextMatch(){
-  // якщо в поточному раунді лишився один без пари — він проходить далі без бою
-  if(roundQueue.length === 1 && nextRoundQueue.length >= 0 && roundQueue.length + nextRoundQueue.length > 1){
-    nextRoundQueue.push(roundQueue.shift());
-  }
-
-  if(roundQueue.length === 0){
-    if(nextRoundQueue.length <= 1){
-      showFinal(nextRoundQueue[0] || allItems[0]);
-      return;
-    }
-    roundQueue = shuffle(nextRoundQueue);
-    nextRoundQueue = [];
-    roundNum++;
-  }
-
-  if(roundQueue.length === 1 && nextRoundQueue.length === 0){
-    showFinal(roundQueue[0]);
+  if(pool.length === 0){
+    showFinal(champion);
     return;
   }
-
-  const a = roundQueue.shift();
-  const b = roundQueue.shift();
-  currentPair = [a, b];
-  renderMatch();
+  nextChallenger(true);
 }
 
-function renderMatch(){
-  roundLabel.textContent = `Раунд ${roundNum} з ${totalRounds}`;
-  const [a, b] = currentPair;
-  duelStage.innerHTML = `
-    <div class="duel-card" data-side="a">
-      <div class="poster">${posterHtml(a)}</div>
-      <h3>${escapeHtml(a.title || '')}</h3>
+function nextChallenger(isFirst){
+  challenger = pool.shift();
+  matchNum++;
+  renderStage(isFirst);
+}
+
+function renderStage(isFirst){
+  roundLabel.textContent = `Виклик ${matchNum} з ${totalMatches}`;
+  duelStage.innerHTML =
+    `<div class="duel-card champion ${isFirst ? '' : 'pulse-in'}" data-side="champion">
+      <div class="poster">${posterHtml(champion)}</div>
+      <h3>${escapeHtml(champion.title || '')}</h3>
     </div>
     <div class="vs">VS</div>
-    <div class="duel-card" data-side="b">
-      <div class="poster">${posterHtml(b)}</div>
-      <h3>${escapeHtml(b.title || '')}</h3>
-    </div>
-  `;
+    <div class="duel-card fly-in" data-side="challenger">
+      <div class="poster">${posterHtml(challenger)}</div>
+      <h3>${escapeHtml(challenger.title || '')}</h3>
+    </div>`;
+
   duelStage.querySelectorAll('.duel-card').forEach(card => {
     card.addEventListener('click', () => pickWinner(card.dataset.side));
   });
 }
 
 function pickWinner(side){
-  const [a, b] = currentPair;
-  const winner = side === 'a' ? a : b;
-  const winCard = duelStage.querySelector(`[data-side="${side}"]`);
-  const loseCard = duelStage.querySelector(`[data-side="${side === 'a' ? 'b' : 'a'}"]`);
-  winCard.classList.add('winner');
-  loseCard.classList.add('loser');
-  nextRoundQueue.push(winner);
-  setTimeout(nextMatch, 500);
+  if(locked) return;
+  locked = true;
+
+  const champCard = duelStage.querySelector('[data-side="champion"]');
+  const challCard = duelStage.querySelector('[data-side="challenger"]');
+
+  if(side === 'champion'){
+    // претендент програв — вилітає праворуч, чемпіон лишається
+    challCard.classList.add('fly-out-right');
+  } else {
+    // чемпіон програв — вилітає ліворуч, претендент стає новим чемпіоном
+    champCard.classList.add('fly-out-left');
+    champion = challenger;
+  }
+
+  setTimeout(() => {
+    locked = false;
+    if(pool.length === 0){
+      showFinal(champion);
+    } else {
+      nextChallenger(false);
+    }
+  }, 460);
 }
 
 function showFinal(winner){
