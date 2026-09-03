@@ -124,10 +124,16 @@ service cloud.firestore {
     match /suggestions/{suggestionId} {
       allow read: if true;
       allow create: if request.resource.data.status == 'pending'
-                     && request.resource.data.raw is string
-                     && request.resource.data.raw.size() > 0
-                     && request.resource.data.raw.size() < 300
-                     && request.resource.data.submittedBy is string;
+                     && request.resource.data.submittedBy is string
+                     && (
+                          (request.resource.data.title is string
+                           && request.resource.data.title.size() > 0
+                           && request.resource.data.title.size() < 200)
+                          ||
+                          (request.resource.data.raw is string
+                           && request.resource.data.raw.size() > 0
+                           && request.resource.data.raw.size() < 300)
+                        );
       allow update, delete: if true;
     }
   }
