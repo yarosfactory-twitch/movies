@@ -181,8 +181,11 @@ spinBtn.addEventListener('click', () => {
   reelTrack.style.transition = 'transform 4.2s cubic-bezier(.11,.7,.14,1)';
   reelTrack.style.transform = `translateY(${finalY}px)`;
 
+  playSfx('spin', 0.55);
+
   reelTrack.addEventListener('transitionend', function handler(){
     reelTrack.removeEventListener('transitionend', handler);
+    playSfx('win', 0.6);
     const winner = items[targetIdx];
     wheelResult.textContent = `🎬 ${winner.title || ''}`;
     isSpinning = false;
