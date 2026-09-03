@@ -54,6 +54,10 @@
   .tmdb-result .no-thumb{ display:flex; align-items:center; justify-content:center; font-size:8px; color:var(--text-mute); }
   .tmdb-result .tr-title{ font-size:13px; color:var(--text); }
   .tmdb-result .tr-year{ font-size:11px; color:var(--text-mute); }
+  .eye-badge{
+    margin-left:auto; flex:0 0 auto; font-size:11px; color:var(--teal); white-space:nowrap;
+    border:1px solid rgba(83,116,104,0.5); padding:3px 8px; background:rgba(83,116,104,0.08);
+  }
 
   #wishSelected{
     margin-top:10px; display:flex; gap:12px; align-items:center; padding:10px;
@@ -69,11 +73,12 @@
   }
   #wishSelected .ws-clear:hover{ border-color:#8a4a3d; color:#c98a7a; }
 
-  .manual-toggle-btn{
+  #submitPanel button.manual-toggle-btn{
     display:block; margin:10px 0 0; background:none; border:none; color:var(--text-mute);
-    font-size:11.5px; text-decoration:underline; cursor:pointer; padding:0; font-family:inherit;
+    font-size:11.5px; text-decoration:underline; text-transform:none; letter-spacing:normal;
+    cursor:pointer; padding:0; font-family:inherit; width:auto;
   }
-  .manual-toggle-btn:hover{ color:var(--gold-bright); }
+  #submitPanel button.manual-toggle-btn:hover{ background:none; color:var(--gold-bright); }
   #wishManualForm{ margin-top:10px; }
 
   #wishSubmitBtn{ margin-top:14px; width:100%; }
@@ -193,6 +198,30 @@ let currentUser = null;
 let selectedMovie = null;
 let searchDebounce = null;
 let manualMode = false;
+let existingMovies = [];
+
+function normalizeTitle(t){
+  return (t || '')
+    .toLowerCase()
+    .replace(/\s*\([^)]*\)\s*$/, '') // прибрати "(S1 EP1-4)" тощо в кінці — рахуємо як одне ціле
+    .trim();
+}
+
+function watchCount(title){
+  const norm = normalizeTitle(title);
+  if(!norm) return 0;
+  return existingMovies.filter(m => normalizeTitle(m.title) === norm).length;
+}
+
+function eyeBadgeHtml(title){
+  const count = watchCount(title);
+  if(count === 0) return '';
+  return `<span class="eye-badge" title="Вже дивились ${count} раз(и)">👁 ${count}</span>`;
+}
+
+fetch('movies.json').then(r => r.ok ? r.json() : []).then(list => {
+  existingMovies = Array.isArray(list) ? list : [];
+}).catch(() => {});
 
 function showWishStatus(kind, text){
   wishStatus.className = 'submit-status show ' + kind;
@@ -230,6 +259,7 @@ wishInput.addEventListener('input', () => {
           <div class="tmdb-result" data-idx="${i}">
             ${thumb}
             <div><div class="tr-title">${escapeHtml(r.title)}</div><div class="tr-year">${r.year || ''}</div></div>
+            ${eyeBadgeHtml(r.title)}
           </div>
         `;
       }).join('');
@@ -261,6 +291,7 @@ function renderSelected(){
       <div class="ws-title">${escapeHtml(selectedMovie.title)}</div>
       <div class="ws-year">${selectedMovie.year || ''}</div>
     </div>
+    ${eyeBadgeHtml(selectedMovie.title)}
     <button type="button" class="ws-clear" id="wsClearBtn">Змінити</button>
   `;
   wishSelected.style.display = 'flex';
