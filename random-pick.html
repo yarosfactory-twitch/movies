@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Колесо випадковості — yarosfactory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap{ max-width:620px; padding:56px 20px 90px; text-align:center; }
+  header{ margin-bottom:20px; }
+  h1{ font-size:clamp(28px, 4.5vw, 40px); margin-bottom:10px; }
+  .sub{ margin:0 auto; }
+
+  .wheel-wrap{
+    position:relative; width:min(320px, 82vw); aspect-ratio:1/1; margin:36px auto 10px;
+  }
+  .wheel-pointer{
+    position:absolute; top:-18px; left:50%; transform:translateX(-50%);
+    font-size:26px; color:var(--gold-bright); z-index:5; text-shadow:0 2px 4px rgba(0,0,0,0.6);
+  }
+  .wheel{
+    width:100%; height:100%; border-radius:50%;
+    border:3px solid var(--gold); box-shadow:0 0 34px rgba(224,187,125,0.18);
+    position:relative; overflow:hidden;
+    transform:rotate(0deg);
+    transition:transform 4s cubic-bezier(.13,.66,.15,1);
+  }
+  .wheel .seg-label{
+    position:absolute; top:50%; left:50%; width:50%; height:2px;
+    transform-origin:0% 50%;
+    display:flex; align-items:center;
+    padding-left:16px;
+    font-size:11px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    max-width:46%;
+    pointer-events:none;
+  }
+  .wheel-spin-btn{
+    display:inline-block; margin:14px auto 0; background:var(--gold); border:1px solid var(--gold); color:#1b1610;
+    padding:13px 36px; font-size:14px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s;
+  }
+  .wheel-spin-btn:hover{ background:var(--gold-bright); }
+  .wheel-spin-btn:disabled{ opacity:0.5; cursor:default; }
+  .wheel-result{
+    text-align:center; margin-top:18px; font-family:'Spectral', serif; font-weight:600; font-size:19px;
+    color:var(--gold-bright); min-height:26px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">yarosfactory · ярос</div>
+    <h1>Колесо випадковості</h1>
+    <p class="sub">Не можеш обрати, що замовити? Хай вирішить колесо.</p>
+    <nav class="pagenav">
+      <a href="wishlist.html">← Побажання</a>
+    </nav>
+    <div id="authWidget"></div>
+  </header>
+
+  <div id="wheelSection">
+    <div class="wheel-wrap">
+      <div class="wheel-pointer">▼</div>
+      <div class="wheel" id="wheelEl"></div>
+    </div>
+    <button type="button" class="wheel-spin-btn" id="spinBtn">Крутити!</button>
+    <div class="wheel-result" id="wheelResult"></div>
+  </div>
+  <div class="empty-mini" id="emptyMsg" style="display:none;">Ще замало схвалених побажань, щоб крутити колесо (потрібно хоча б два).</div>
+
+  <footer>оновлюється вручну · movies.json</footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="common.js"></script>
+<script>
+const wheelSection = document.getElementById('wheelSection');
+const emptyMsg = document.getElementById('emptyMsg');
+const wheelEl = document.getElementById('wheelEl');
+const spinBtn = document.getElementById('spinBtn');
+const wheelResult = document.getElementById('wheelResult');
+
+const WHEEL_COLORS = ['#3a2f22', '#2a2620'];
+let wheelItems = [];
+let wheelRotation = 0;
+let isSpinning = false;
+
+function updateWheel(items){
+  if(isSpinning) return;
+  wheelItems = items;
+  if(items.length < 2){
+    wheelSection.style.display = 'none';
+    emptyMsg.style.display = '';
+    return;
+  }
+  wheelSection.style.display = '';
+  emptyMsg.style.display = 'none';
+
+  const n = items.length;
+  const seg = 360 / n;
+  const stops = items.map((_, i) => {
+    const color = WHEEL_COLORS[i % WHEEL_COLORS.length];
+    return `${color} ${(i*seg).toFixed(2)}deg ${((i+1)*seg).toFixed(2)}deg`;
+  }).join(', ');
+  wheelEl.style.background = `conic-gradient(${stops})`;
+
+  const labels = items.map((it, i) => {
+    const angle = i*seg + seg/2;
+    const title = (it.title || '').length > 18 ? it.title.slice(0, 17) + '…' : (it.title || '');
+    return `<div class="seg-label" style="transform:translateY(-50%) rotate(${angle}deg)">${escapeHtml(title)}</div>`;
+  }).join('');
+  wheelEl.innerHTML = labels;
+  wheelEl.style.transition = 'none';
+  wheelEl.style.transform = `rotate(${wheelRotation}deg)`;
+  wheelResult.textContent = '';
+}
+
+spinBtn.addEventListener('click', () => {
+  if(isSpinning || wheelItems.length < 2) return;
+  isSpinning = true;
+  spinBtn.disabled = true;
+  wheelResult.textContent = '';
+
+  const n = wheelItems.length;
+  const seg = 360 / n;
+  const targetIdx = Math.floor(Math.random() * n);
+  const jitter = (Math.random() - 0.5) * seg * 0.7;
+  const desiredMod = ((360 - (targetIdx*seg + seg/2 + jitter)) % 360 + 360) % 360;
+  const currentMod = ((wheelRotation % 360) + 360) % 360;
+  let delta = desiredMod - currentMod;
+  if(delta < 0) delta += 360;
+  const fullSpins = 5 * 360;
+  wheelRotation += fullSpins + delta;
+
+  wheelEl.style.transition = 'transform 4s cubic-bezier(.13,.66,.15,1)';
+  wheelEl.style.transform = `rotate(${wheelRotation}deg)`;
+
+  wheelEl.addEventListener('transitionend', function handler(){
+    wheelEl.removeEventListener('transitionend', handler);
+    const winner = wheelItems[targetIdx];
+    wheelResult.textContent = `🎬 ${winner.title || ''}`;
+    isSpinning = false;
+    spinBtn.disabled = false;
+  }, { once: true });
+});
+
+function loadSuggestions(){
+  if(!firebaseReady){
+    emptyMsg.textContent = 'Список тимчасово недоступний.';
+    emptyMsg.style.display = '';
+    wheelSection.style.display = 'none';
+    return;
+  }
+  db.collection('suggestions').where('status', '==', 'approved')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snap => {
+      const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateWheel(items);
+    }, err => {
+      emptyMsg.textContent = 'Помилка завантаження: ' + err.message;
+      emptyMsg.style.display = '';
+      wheelSection.style.display = 'none';
+    });
+}
+
+initAuth(document.getElementById('authWidget'));
+loadSuggestions();
+</script>
+
+</body>
+</html>
