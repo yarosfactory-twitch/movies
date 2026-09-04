@@ -75,6 +75,24 @@
   }
   .start-btn:hover{ background:var(--gold-bright); }
   .final-score{ font-family:'Spectral', serif; font-weight:700; font-size:34px; color:var(--gold-bright); margin-bottom:8px; }
+
+  .quiz-leaderboard{
+    margin-top:22px; background:var(--panel); border:1px solid var(--border); padding:18px 20px; text-align:left;
+  }
+  .quiz-leaderboard h3{
+    font-family:'Spectral', serif; font-size:14px; color:var(--gold-bright); margin:0 0 12px;
+    text-transform:uppercase; letter-spacing:0.05em; text-align:center;
+  }
+  .qlb-row{
+    display:flex; align-items:center; gap:12px; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px;
+  }
+  .qlb-row:last-child{ border-bottom:none; }
+  .qlb-rank{ width:24px; text-align:center; flex:0 0 auto; color:var(--text-mute); font-weight:600; }
+  .qlb-name{ flex:1; color:var(--text); }
+  .qlb-points{ display:inline-flex; align-items:center; gap:4px; color:var(--gold-bright); font-weight:600; flex:0 0 auto; }
+  .qlb-points img{ width:14px; height:14px; }
+  .qlb-row.qlb-me{ background:rgba(224,187,125,0.08); margin:0 -20px; padding-left:20px; padding-right:20px; }
+  .qlb-row.qlb-me .qlb-name{ color:var(--gold-bright); font-weight:600; }
 </style>
 </head>
 <body>
@@ -293,8 +311,43 @@ function showFinal(){
       <p style="margin-top:-10px;">Всього балів: ${pointsHtml()}</p>
       <button type="button" class="start-btn" id="restartBtn">Ще раз</button>
     </div>
+    <div class="quiz-leaderboard" id="quizLeaderboard">
+      <h3>Топ гравців</h3>
+      <div class="empty-mini">Завантаження…</div>
+    </div>
   `;
   document.getElementById('restartBtn').addEventListener('click', startQuiz);
+  renderQuizLeaderboard();
+}
+
+async function renderQuizLeaderboard(){
+  const box = document.getElementById('quizLeaderboard');
+  if(!firebaseReady){
+    box.querySelector('.empty-mini').textContent = 'Рейтинг тимчасово недоступний.';
+    return;
+  }
+  try{
+    const snap = await db.collection('quizPoints').orderBy('points', 'desc').limit(10).get();
+    if(snap.empty){
+      box.querySelector('.empty-mini').textContent = 'Ще ніхто не заробив балів — будь першим!';
+      return;
+    }
+    const medal = i => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+    const rows = snap.docs.map((doc, i) => {
+      const p = doc.data().points || 0;
+      const isMe = currentUser && doc.id === currentUser.login.toLowerCase();
+      return `
+        <div class="qlb-row${isMe ? ' qlb-me' : ''}">
+          <span class="qlb-rank">${medal(i) || (i + 1)}</span>
+          <span class="qlb-name">${escapeHtml(doc.id)}</span>
+          <span class="qlb-points">${p} <img src="coin.png" alt="" onerror="this.style.display='none'"></span>
+        </div>
+      `;
+    }).join('');
+    box.innerHTML = `<h3>Топ гравців</h3>${rows}`;
+  }catch(err){
+    box.querySelector('.empty-mini').textContent = 'Не вдалося завантажити рейтинг: ' + err.message;
+  }
 }
 
 let currentUser = null;
