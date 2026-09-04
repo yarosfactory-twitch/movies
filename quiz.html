@@ -20,6 +20,18 @@
     margin:26px 0 14px; font-size:12px; color:var(--text-mute); letter-spacing:0.05em; text-transform:uppercase;
   }
   .score{ color:var(--gold-bright); font-weight:600; }
+  .points{ display:inline-flex; align-items:center; gap:5px; color:var(--gold-bright); font-weight:600; }
+  .points img{ width:18px; height:18px; }
+
+  .fifty-btn{
+    grid-column:1/-1; margin-top:4px; background:none; border:1px dashed var(--gold);
+    color:var(--gold-bright); padding:10px 14px; font-size:12.5px; cursor:pointer; font-family:inherit;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    transition:background .15s, opacity .15s;
+  }
+  .fifty-btn img{ width:15px; height:15px; }
+  .fifty-btn:hover:not(:disabled){ background:rgba(224,187,125,0.1); }
+  .fifty-btn:disabled{ opacity:0.35; cursor:default; border-style:solid; }
 
   .frame-wrap{
     position:relative; width:100%; aspect-ratio:16/9; background:var(--panel);
@@ -146,6 +158,14 @@ async function startQuiz(){
   renderQuestion();
 }
 
+const POINTS_PER_CORRECT = 1;
+const FIFTY_FIFTY_COST = 20;
+
+function getPoints(){ return parseInt(localStorage.getItem('quizPoints') || '0', 10); }
+function setPoints(n){ localStorage.setItem('quizPoints', String(Math.max(0, n))); }
+function addPoints(n){ setPoints(getPoints() + n); }
+function pointsHtml(){ return `<span class="points"><img src="coin.png" alt="" onerror="this.style.display='none'"> ${getPoints()}</span>`; }
+
 async function renderQuestion(){
   answered = false;
   const q = questions[qIndex];
@@ -154,6 +174,7 @@ async function renderQuestion(){
     <div class="progress-row">
       <span>Питання ${qIndex + 1} з ${questions.length}</span>
       <span class="score">Рахунок: ${score}</span>
+      <span id="pointsDisplay">${pointsHtml()}</span>
     </div>
     <div class="frame-wrap">
       <div class="frame-loading">Завантаження кадру…</div>
@@ -162,21 +183,21 @@ async function renderQuestion(){
     <div class="answers" id="answersRow"><div class="empty-mini">Готую варіанти…</div></div>
   `;
 
-  // 4 назви з переглянутих + 4 зі схожих фільмів (через TMDB), плюс сама правильна відповідь
+  // 4 назви з переглянутих + 5 зі схожих фільмів (через TMDB), плюс сама правильна відповідь = 10 варіантів
   const watchedDecoys = shuffle(pool.map(m => m.title).filter(t => t !== q.title)).slice(0, 4);
 
   let similarDecoys = [];
   try{
     const recs = await tmdbGetRecommendations(q.id);
-    similarDecoys = shuffle(recs.map(r => r.title).filter(t => t && t !== q.title && !watchedDecoys.includes(t))).slice(0, 4);
+    similarDecoys = shuffle(recs.map(r => r.title).filter(t => t && t !== q.title && !watchedDecoys.includes(t))).slice(0, 5);
   }catch(err){
     console.warn('Не вдалося підтягнути схожі фільми для варіантів:', err.message);
   }
 
   // якщо схожих не вистачило (рідкісний фільм) — добираємо ще з переглянутих
-  if(similarDecoys.length < 4){
+  if(similarDecoys.length < 5){
     const used = new Set([q.title, ...watchedDecoys, ...similarDecoys]);
-    const extra = shuffle(pool.map(m => m.title).filter(t => !used.has(t))).slice(0, 4 - similarDecoys.length);
+    const extra = shuffle(pool.map(m => m.title).filter(t => !used.has(t))).slice(0, 5 - similarDecoys.length);
     similarDecoys = similarDecoys.concat(extra);
   }
 
@@ -186,10 +207,23 @@ async function renderQuestion(){
 
   answersRow.innerHTML = options.map(opt =>
     `<button type="button" class="answer-btn" data-title="${escapeHtml(opt)}">${escapeHtml(opt)}</button>`
-  ).join('');
+  ).join('')
+  + `<button type="button" class="fifty-btn" id="fiftyBtn" ${getPoints() < FIFTY_FIFTY_COST ? 'disabled' : ''}>50/50 <img src="coin.png" alt="" onerror="this.style.display='none'"> −${FIFTY_FIFTY_COST}</button>`;
 
   answersRow.querySelectorAll('.answer-btn').forEach(btn => {
     btn.addEventListener('click', () => pickAnswer(btn, q.title));
+  });
+
+  document.getElementById('fiftyBtn').addEventListener('click', () => {
+    if(answered || getPoints() < FIFTY_FIFTY_COST) return;
+    addPoints(-FIFTY_FIFTY_COST);
+    document.getElementById('pointsDisplay').innerHTML = pointsHtml();
+
+    const btns = [...answersRow.querySelectorAll('.answer-btn')];
+    const wrongBtns = btns.filter(b => b.dataset.title !== q.title);
+    const keepWrong = wrongBtns[Math.floor(Math.random() * wrongBtns.length)];
+    wrongBtns.forEach(b => { if(b !== keepWrong) b.style.display = 'none'; });
+    document.getElementById('fiftyBtn').remove();
   });
 }
 
@@ -202,7 +236,15 @@ function pickAnswer(btn, correctTitle){
     if(b.dataset.title === correctTitle) b.classList.add('correct');
     else if(b === btn) b.classList.add('wrong');
   });
-  if(picked === correctTitle) score++;
+  const fiftyBtn = document.getElementById('fiftyBtn');
+  if(fiftyBtn) fiftyBtn.disabled = true;
+
+  if(picked === correctTitle){
+    score++;
+    addPoints(POINTS_PER_CORRECT);
+    const pd = document.getElementById('pointsDisplay');
+    if(pd) pd.innerHTML = pointsHtml();
+  }
 
   const nextBtn = document.createElement('button');
   nextBtn.type = 'button';
@@ -221,6 +263,7 @@ function showFinal(){
     <div class="final-panel">
       <div class="final-score">${score} / ${questions.length}</div>
       <p>Правильних відповідей</p>
+      <p style="margin-top:-10px;">Всього балів: ${pointsHtml()}</p>
       <button type="button" class="start-btn" id="restartBtn">Ще раз</button>
     </div>
   `;
