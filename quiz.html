@@ -118,10 +118,13 @@ async function startQuiz(){
   qIndex = 0;
   quizArea.innerHTML = `<div class="empty-mini">Готую питання…</div>`;
 
-  const chosen = shuffle(pool).slice(0, QUESTION_COUNT);
+  const candidates = shuffle(pool);
   questions = [];
+  let i = 0;
 
-  for(const m of chosen){
+  while(questions.length < QUESTION_COUNT && i < candidates.length){
+    const m = candidates[i];
+    i++;
     try{
       let id = m.tmdbId || await tmdbFindId(m.title, m.year);
       if(!id) continue;
