@@ -50,6 +50,12 @@
   }
   .chip:hover{ border-color:var(--gold); color:var(--text); }
   .chip.active{ background:var(--gold); border-color:var(--gold); color:#1b1610; font-weight:600; }
+  .quiz-link{
+    display:inline-block; margin-top:16px; background:var(--panel); border:1px solid var(--gold);
+    color:var(--gold-bright); text-decoration:none; padding:11px 22px; font-size:13px; letter-spacing:0.04em;
+    text-transform:uppercase; transition:background .15s, color .15s;
+  }
+  .quiz-link:hover{ background:var(--gold); color:#1b1610; }
 </style>
 </head>
 <body>
@@ -63,6 +69,7 @@
     <div class="runes" id="stats"></div>
     <nav class="pagenav"><a href="wishlist.html">← Побажання</a><a href="leaderboard.html">Рейтинг</a><a href="index.html">До сьогоднішнього фільму</a><a href="calendar.html">Календар →</a></nav>
     <div id="authWidget"></div>
+    <a href="quiz.html" class="quiz-link">🎬 Вгадай фільм за кадром</a>
   </header>
 
   <div class="controls">
