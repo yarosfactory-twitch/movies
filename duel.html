@@ -15,6 +15,38 @@
   h1{ font-size:clamp(28px, 4.5vw, 40px); margin-bottom:10px; }
   .sub{ margin:0 auto; }
 
+  .setup-panel{
+    max-width:480px; margin:30px auto 0; background:var(--panel); border:1px solid var(--gold); padding:26px 24px; text-align:left;
+  }
+  .setup-panel h3{
+    font-family:'Spectral', serif; font-size:15px; color:var(--gold-bright); margin:0 0 18px; text-align:center;
+    text-transform:uppercase; letter-spacing:0.05em;
+  }
+  .setup-row{ display:flex; gap:14px; }
+  .setup-field{ flex:1; margin-bottom:16px; }
+  .setup-field label{
+    display:block; font-size:11px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-mute); margin-bottom:6px;
+  }
+  .setup-field select{
+    width:100%; background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    padding:9px 10px; font-family:inherit; font-size:13px; outline:none;
+  }
+  .setup-field select:focus{ border-color:var(--gold); }
+  .size-options{ display:flex; gap:10px; }
+  .size-btn{
+    flex:1; background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    padding:10px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .size-btn:hover{ border-color:var(--gold); }
+  .size-btn.selected{ border-color:var(--gold-bright); background:rgba(224,187,125,0.12); color:var(--gold-bright); }
+  .start-quiz-btn{
+    display:block; width:100%; margin-top:6px; background:var(--gold); border:1px solid var(--gold); color:#1b1610;
+    padding:13px; font-size:14px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; cursor:pointer;
+  }
+  .start-quiz-btn:hover{ background:var(--gold-bright); }
+  .setup-hint{ margin-top:10px; font-size:12px; color:var(--text-mute); text-align:center; }
+
   .round-label{
     margin:28px 0 10px; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mute);
   }
@@ -119,7 +151,31 @@
     <div id="authWidget"></div>
   </header>
 
-  <div id="duelSection">
+  <div class="setup-panel" id="setupPanel" style="display:none;">
+    <h3>Налаштування</h3>
+    <div class="setup-row">
+      <div class="setup-field">
+        <label for="genreFilter">Жанр</label>
+        <select id="genreFilter"><option value="">Будь-який</option></select>
+      </div>
+      <div class="setup-field">
+        <label for="yearFilter">Рік</label>
+        <select id="yearFilter"><option value="">Будь-який</option></select>
+      </div>
+    </div>
+    <div class="setup-field">
+      <label>Кількість карток</label>
+      <div class="size-options" id="sizeOptions">
+        <button type="button" class="size-btn" data-size="8">8</button>
+        <button type="button" class="size-btn" data-size="16">16</button>
+        <button type="button" class="size-btn" data-size="32">32</button>
+      </div>
+    </div>
+    <button type="button" class="start-quiz-btn" id="setupStartBtn">Почати</button>
+    <div class="setup-hint" id="setupHint"></div>
+  </div>
+
+  <div id="duelSection" style="display:none;">
     <div class="round-label" id="roundLabel"></div>
     <div class="duel-stage" id="duelStage"></div>
     <div class="chat-vote-row" id="chatVoteRow" style="display:none;">
@@ -315,8 +371,11 @@ function startChatVote(){
       const user = m[1].toLowerCase();
       const text = m[2].trim();
       if(seenUsers.has(user)) return;
-      if(text === '1'){ count1++; seenUsers.add(user); updateStatus(); }
-      else if(text === '2'){ count2++; seenUsers.add(user); updateStatus(); }
+      const norm = text.toLowerCase();
+      const SIDE1_WORDS = ['1', 'один', 'перший', 'перша', 'одна'];
+      const SIDE2_WORDS = ['2', 'два', 'другий', 'друга', 'дві'];
+      if(SIDE1_WORDS.includes(norm)){ count1++; seenUsers.add(user); updateStatus(); }
+      else if(SIDE2_WORDS.includes(norm)){ count2++; seenUsers.add(user); updateStatus(); }
     });
   };
 
@@ -347,6 +406,72 @@ function startChatVote(){
 
 chatVoteBtn.addEventListener('click', startChatVote);
 
+let allApprovedItems = [];
+let selectedSize = 16;
+
+function shuffleArr(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function populateSetupFilters(){
+  const genreSet = new Set();
+  const yearSet = new Set();
+  allApprovedItems.forEach(d => {
+    (d.genre || []).forEach(g => genreSet.add(g));
+    if(d.year) yearSet.add(d.year);
+  });
+
+  const genreSel = document.getElementById('genreFilter');
+  genreSel.innerHTML = '<option value="">Будь-який</option>'
+    + [...genreSet].sort().map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+
+  const yearSel = document.getElementById('yearFilter');
+  yearSel.innerHTML = '<option value="">Будь-який</option>'
+    + [...yearSet].sort((a, b) => b - a).map(y => `<option value="${y}">${y}</option>`).join('');
+}
+
+document.querySelectorAll('.size-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedSize = parseInt(btn.dataset.size, 10);
+  });
+});
+document.querySelector('.size-btn[data-size="16"]').classList.add('selected');
+
+document.getElementById('setupStartBtn').addEventListener('click', () => {
+  const genre = document.getElementById('genreFilter').value;
+  const year = document.getElementById('yearFilter').value ? parseInt(document.getElementById('yearFilter').value, 10) : null;
+
+  let filtered = allApprovedItems.filter(d => {
+    if(genre && !(d.genre || []).includes(genre)) return false;
+    if(year && d.year !== year) return false;
+    return true;
+  });
+
+  const hint = document.getElementById('setupHint');
+  if(filtered.length < 2){
+    hint.textContent = 'Замало фільмів під ці фільтри (потрібно хоча б два) — спробуй інші налаштування.';
+    return;
+  }
+
+  const sample = shuffleArr(filtered).slice(0, selectedSize);
+  if(sample.length < selectedSize){
+    hint.textContent = `Під фільтри знайшлось лише ${sample.length} — граємо з ними.`;
+  } else {
+    hint.textContent = '';
+  }
+
+  document.getElementById('setupPanel').style.display = 'none';
+  duelSection.style.display = '';
+  startTournament(sample);
+});
+
 function loadSuggestions(){
   if(!firebaseReady){
     emptyMsg.textContent = 'Список тимчасово недоступний.';
@@ -358,14 +483,18 @@ function loadSuggestions(){
     .orderBy('createdAt', 'desc')
     .onSnapshot(snap => {
       const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      allApprovedItems = list;
       if(list.length < 2){
+        document.getElementById('setupPanel').style.display = 'none';
         duelSection.style.display = 'none';
         emptyMsg.style.display = '';
         return;
       }
-      duelSection.style.display = '';
       emptyMsg.style.display = 'none';
-      if(!started) startTournament(list);
+      if(!started){
+        populateSetupFilters();
+        document.getElementById('setupPanel').style.display = '';
+      }
     }, err => {
       emptyMsg.textContent = 'Помилка завантаження: ' + err.message;
       emptyMsg.style.display = '';
