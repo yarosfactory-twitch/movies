@@ -136,6 +136,11 @@ service cloud.firestore {
                         );
       allow update, delete: if true;
     }
+
+    match /quizPoints/{userLogin} {
+      allow read: if true;
+      allow write: if request.resource.data.points is int && request.resource.data.points >= 0;
+    }
   }
 }
 ```
