@@ -21,6 +21,7 @@
   }
   .score{ color:var(--gold-bright); font-weight:600; }
   .points{ display:inline-flex; align-items:center; gap:5px; color:var(--gold-bright); font-weight:600; }
+  .points-locked{ font-size:10.5px; color:var(--text-mute); text-transform:none; letter-spacing:normal; }
   .points img{ width:18px; height:18px; }
 
   .fifty-btn{
@@ -164,7 +165,12 @@ const FIFTY_FIFTY_COST = 20;
 function getPoints(){ return parseInt(localStorage.getItem('quizPoints') || '0', 10); }
 function setPoints(n){ localStorage.setItem('quizPoints', String(Math.max(0, n))); }
 function addPoints(n){ setPoints(getPoints() + n); }
-function pointsHtml(){ return `<span class="points"><img src="coin.png" alt="" onerror="this.style.display='none'"> ${getPoints()}</span>`; }
+function pointsHtml(){
+  if(!currentUser){
+    return `<span class="points-locked">Увійди через Twitch, щоб заробляти бали</span>`;
+  }
+  return `<span class="points"><img src="coin.png" alt="" onerror="this.style.display='none'"> ${getPoints()}</span>`;
+}
 
 async function renderQuestion(){
   answered = false;
@@ -208,14 +214,14 @@ async function renderQuestion(){
   answersRow.innerHTML = options.map(opt =>
     `<button type="button" class="answer-btn" data-title="${escapeHtml(opt)}">${escapeHtml(opt)}</button>`
   ).join('')
-  + `<button type="button" class="fifty-btn" id="fiftyBtn" ${getPoints() < FIFTY_FIFTY_COST ? 'disabled' : ''}>50/50 <img src="coin.png" alt="" onerror="this.style.display='none'"> −${FIFTY_FIFTY_COST}</button>`;
+  + `<button type="button" class="fifty-btn" id="fiftyBtn" ${(!currentUser || getPoints() < FIFTY_FIFTY_COST) ? 'disabled' : ''}>50/50 <img src="coin.png" alt="" onerror="this.style.display='none'"> −${FIFTY_FIFTY_COST}</button>`;
 
   answersRow.querySelectorAll('.answer-btn').forEach(btn => {
     btn.addEventListener('click', () => pickAnswer(btn, q.title));
   });
 
   document.getElementById('fiftyBtn').addEventListener('click', () => {
-    if(answered || getPoints() < FIFTY_FIFTY_COST) return;
+    if(answered || !currentUser || getPoints() < FIFTY_FIFTY_COST) return;
     addPoints(-FIFTY_FIFTY_COST);
     document.getElementById('pointsDisplay').innerHTML = pointsHtml();
 
@@ -241,7 +247,7 @@ function pickAnswer(btn, correctTitle){
 
   if(picked === correctTitle){
     score++;
-    addPoints(POINTS_PER_CORRECT);
+    if(currentUser) addPoints(POINTS_PER_CORRECT);
     const pd = document.getElementById('pointsDisplay');
     if(pd) pd.innerHTML = pointsHtml();
   }
@@ -270,6 +276,8 @@ function showFinal(){
   document.getElementById('restartBtn').addEventListener('click', startQuiz);
 }
 
+let currentUser = null;
+
 fetch('movies.json')
   .then(res => res.ok ? res.json() : [])
   .then(data => {
@@ -286,7 +294,9 @@ fetch('movies.json')
     quizArea.innerHTML = `<div class="empty-mini">Не вдалося завантажити список.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
   });
 
-initAuth(document.getElementById('authWidget'));
+initAuth(document.getElementById('authWidget')).then(() => {
+  currentUser = getTwitchUser();
+});
 </script>
 
 </body>
