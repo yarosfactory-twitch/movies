@@ -120,7 +120,7 @@ function shuffle(arr){
 function showStart(){
   quizArea.innerHTML = `
     <div class="start-panel">
-      <p>Кадр — і десять варіантів відповіді. Пройди ${Math.min(QUESTION_COUNT, pool.length)} питань і подивись, скільки вгадаєш.</p>
+      <p>Кадр — і чотири варіанти назви. Пройди ${Math.min(QUESTION_COUNT, pool.length)} питань і подивись, скільки вгадаєш.</p>
       <button type="button" class="start-btn" id="startBtn">Почати вікторину</button>
     </div>
   `;
@@ -131,6 +131,8 @@ async function startQuiz(){
   score = 0;
   qIndex = 0;
   quizArea.innerHTML = `<div class="empty-mini">Готую питання…</div>`;
+
+  await authReady;
 
   const candidates = shuffle(pool);
   questions = [];
@@ -162,9 +164,28 @@ async function startQuiz(){
 const POINTS_PER_CORRECT = 1;
 const FIFTY_FIFTY_COST = 20;
 
-function getPoints(){ return parseInt(localStorage.getItem('quizPoints') || '0', 10); }
-function setPoints(n){ localStorage.setItem('quizPoints', String(Math.max(0, n))); }
-function addPoints(n){ setPoints(getPoints() + n); }
+let currentPoints = 0;
+
+function getPoints(){ return currentPoints; }
+
+async function loadPoints(){
+  if(!currentUser || !firebaseReady) return;
+  try{
+    const doc = await db.collection('quizPoints').doc(currentUser.login.toLowerCase()).get();
+    currentPoints = doc.exists ? (doc.data().points || 0) : 0;
+  }catch(err){
+    console.warn('Не вдалося завантажити бали:', err.message);
+  }
+}
+
+function addPoints(n){
+  currentPoints = Math.max(0, currentPoints + n);
+  if(currentUser && firebaseReady){
+    db.collection('quizPoints').doc(currentUser.login.toLowerCase())
+      .set({ points: currentPoints }, { merge: true })
+      .catch(err => console.warn('Не вдалося зберегти бали:', err.message));
+  }
+}
 function pointsHtml(){
   if(!currentUser){
     return `<span class="points-locked">Увійди через Twitch, щоб заробляти бали</span>`;
@@ -294,8 +315,9 @@ fetch('movies.json')
     quizArea.innerHTML = `<div class="empty-mini">Не вдалося завантажити список.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
   });
 
-initAuth(document.getElementById('authWidget')).then(() => {
+const authReady = initAuth(document.getElementById('authWidget')).then(async () => {
   currentUser = getTwitchUser();
+  await loadPoints();
 });
 </script>
 
