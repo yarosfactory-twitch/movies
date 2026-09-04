@@ -178,7 +178,7 @@
   </div>
 
   <div class="panel">
-    <h2>Хочуть подивитись</h2>
+    <h2 id="approvedHeading">Хочуть подивитись</h2>
     <div class="wish-grid" id="approvedGrid"></div>
   </div>
 
@@ -406,6 +406,7 @@ function renderApproved(){
       if(snap.empty){
         approvedGrid.innerHTML = '<div class="empty-mini">Поки що порожньо — стань першим, хто запропонує фільм!</div>';
         approvedItemsCache = [];
+        document.getElementById('approvedHeading').textContent = 'Хочуть подивитись (0)';
         return;
       }
 
@@ -432,6 +433,7 @@ function renderApproved(){
 
       const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       approvedItemsCache = items;
+      document.getElementById('approvedHeading').textContent = `Хочуть подивитись (${items.length})`;
 
       approvedGrid.innerHTML = items.map(d => {
         const posterInner = d.poster
