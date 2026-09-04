@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Вгадай фільм за кадром — yarosfactory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap{ max-width:680px; padding:52px 20px 90px; text-align:center; }
+  header{ margin-bottom:10px; }
+  h1{ font-size:clamp(26px, 4vw, 36px); margin-bottom:10px; }
+  .sub{ margin:0 auto; }
+
+  .progress-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin:26px 0 14px; font-size:12px; color:var(--text-mute); letter-spacing:0.05em; text-transform:uppercase;
+  }
+  .score{ color:var(--gold-bright); font-weight:600; }
+
+  .frame-wrap{
+    position:relative; width:100%; aspect-ratio:16/9; background:var(--panel);
+    border:1px solid var(--gold); overflow:hidden;
+  }
+  .frame-wrap img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .frame-loading{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:var(--text-mute); font-family:'Spectral', serif; font-size:14px;
+  }
+
+  .answers{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px; }
+  @media (max-width:520px){ .answers{ grid-template-columns:1fr; } }
+  .answer-btn{
+    background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:14px 16px; font-size:14px; text-align:left; cursor:pointer; font-family:inherit;
+    transition:border-color .15s, background .15s;
+  }
+  .answer-btn:hover{ border-color:var(--gold); }
+  .answer-btn:disabled{ cursor:default; }
+  .answer-btn.correct{ border-color:var(--teal); background:rgba(83,116,104,0.15); color:var(--teal); }
+  .answer-btn.wrong{ border-color:#8a4a3d; background:rgba(138,74,61,0.12); color:#c98a7a; }
+
+  .next-btn{
+    display:inline-block; margin-top:22px; background:var(--gold); border:1px solid var(--gold); color:#1b1610;
+    padding:12px 30px; font-size:13px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s;
+  }
+  .next-btn:hover{ background:var(--gold-bright); }
+
+  .start-panel, .final-panel{
+    background:var(--panel); border:1px solid var(--gold); padding:36px 28px; margin-top:20px;
+  }
+  .start-panel p, .final-panel p{ font-size:14px; color:var(--text-dim); margin-bottom:20px; }
+  .start-btn{
+    display:inline-block; background:var(--gold); border:1px solid var(--gold); color:#1b1610;
+    padding:13px 34px; font-size:14px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer;
+  }
+  .start-btn:hover{ background:var(--gold-bright); }
+  .final-score{ font-family:'Spectral', serif; font-weight:700; font-size:34px; color:var(--gold-bright); margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">yarosfactory · ярос</div>
+    <h1>Вгадай фільм за кадром</h1>
+    <p class="sub">Кадри з фільмів, які ми вже дивились на стрімі — впізнаєш?</p>
+    <nav class="pagenav">
+      <a href="archive.html">← Архів</a>
+    </nav>
+    <div id="authWidget"></div>
+  </header>
+
+  <div id="quizArea"><div class="empty-mini">Завантаження…</div></div>
+
+  <footer>оновлюється вручну · movies.json</footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="common.js"></script>
+<script>
+const quizArea = document.getElementById('quizArea');
+const QUESTION_COUNT = 15;
+
+let pool = [];        // всі переглянуті фільми з movies.json
+let questions = [];   // підготовлені питання цього раунду
+let qIndex = 0;
+let score = 0;
+let answered = false;
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showStart(){
+  quizArea.innerHTML = `
+    <div class="start-panel">
+      <p>Кадр — і чотири варіанти назви. Пройди ${Math.min(QUESTION_COUNT, pool.length)} питань і подивись, скільки вгадаєш.</p>
+      <button type="button" class="start-btn" id="startBtn">Почати вікторину</button>
+    </div>
+  `;
+  document.getElementById('startBtn').addEventListener('click', startQuiz);
+}
+
+async function startQuiz(){
+  score = 0;
+  qIndex = 0;
+  quizArea.innerHTML = `<div class="empty-mini">Готую питання…</div>`;
+
+  const chosen = shuffle(pool).slice(0, QUESTION_COUNT);
+  questions = [];
+
+  for(const m of chosen){
+    try{
+      let id = m.tmdbId || await tmdbFindId(m.title, m.year);
+      if(!id) continue;
+      const backdrops = await tmdbGetBackdrops(id);
+      if(!backdrops.length) continue;
+      const image = backdrops[Math.floor(Math.random() * Math.min(backdrops.length, 5))];
+      questions.push({ title: m.title, image });
+    }catch(err){
+      console.warn('Пропускаю фільм у вікторині:', m.title, err.message);
+    }
+  }
+
+  if(questions.length < 4){
+    quizArea.innerHTML = `<div class="empty-mini">Не вдалося зібрати достатньо кадрів. Спробуй ще раз пізніше.</div>`;
+    return;
+  }
+
+  renderQuestion();
+}
+
+function renderQuestion(){
+  answered = false;
+  const q = questions[qIndex];
+
+  // варіанти відповідей: правильна + 3 випадкові інші назви з пулу
+  const otherTitles = shuffle(pool.map(m => m.title).filter(t => t !== q.title)).slice(0, 3);
+  const options = shuffle([q.title, ...otherTitles]);
+
+  quizArea.innerHTML = `
+    <div class="progress-row">
+      <span>Питання ${qIndex + 1} з ${questions.length}</span>
+      <span class="score">Рахунок: ${score}</span>
+    </div>
+    <div class="frame-wrap">
+      <div class="frame-loading">Завантаження кадру…</div>
+      <img src="${escapeHtml(q.image)}" alt="" style="opacity:0" onload="this.style.opacity=1; this.previousElementSibling.style.display='none';">
+    </div>
+    <div class="answers" id="answersRow">
+      ${options.map(opt => `<button type="button" class="answer-btn" data-title="${escapeHtml(opt)}">${escapeHtml(opt)}</button>`).join('')}
+    </div>
+  `;
+
+  document.querySelectorAll('.answer-btn').forEach(btn => {
+    btn.addEventListener('click', () => pickAnswer(btn, q.title));
+  });
+}
+
+function pickAnswer(btn, correctTitle){
+  if(answered) return;
+  answered = true;
+  const picked = btn.dataset.title;
+  document.querySelectorAll('.answer-btn').forEach(b => {
+    b.disabled = true;
+    if(b.dataset.title === correctTitle) b.classList.add('correct');
+    else if(b === btn) b.classList.add('wrong');
+  });
+  if(picked === correctTitle) score++;
+
+  const nextBtn = document.createElement('button');
+  nextBtn.type = 'button';
+  nextBtn.className = 'next-btn';
+  nextBtn.textContent = qIndex + 1 < questions.length ? 'Далі →' : 'Показати результат';
+  nextBtn.addEventListener('click', () => {
+    qIndex++;
+    if(qIndex < questions.length) renderQuestion();
+    else showFinal();
+  });
+  quizArea.appendChild(nextBtn);
+}
+
+function showFinal(){
+  quizArea.innerHTML = `
+    <div class="final-panel">
+      <div class="final-score">${score} / ${questions.length}</div>
+      <p>Правильних відповідей</p>
+      <button type="button" class="start-btn" id="restartBtn">Ще раз</button>
+    </div>
+  `;
+  document.getElementById('restartBtn').addEventListener('click', startQuiz);
+}
+
+fetch('movies.json')
+  .then(res => res.ok ? res.json() : [])
+  .then(data => {
+    const list = Array.isArray(data) ? data : [];
+    const today = new Date(); today.setHours(0,0,0,0);
+    pool = list.filter(m => m.title && new Date(m.watched) <= today);
+    if(pool.length < 4){
+      quizArea.innerHTML = `<div class="empty-mini">Замало переглянутих фільмів для вікторини.</div>`;
+      return;
+    }
+    showStart();
+  })
+  .catch(err => {
+    quizArea.innerHTML = `<div class="empty-mini">Не вдалося завантажити список.<br><br><span style="opacity:.6">${escapeHtml(err.message)}</span></div>`;
+  });
+
+initAuth(document.getElementById('authWidget'));
+</script>
+
+</body>
+</html>
