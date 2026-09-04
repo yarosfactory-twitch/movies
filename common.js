@@ -272,6 +272,15 @@ async function tmdbGetRecommendations(id){
   }));
 }
 
+const TMDB_BACKDROP_BASE = 'https://image.tmdb.org/t/p/w780';
+async function tmdbGetBackdrops(id){
+  const url = `https://api.themoviedb.org/3/movie/${id}/images?api_key=${TMDB_API_KEY}&include_image_language=null,en,uk`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('Помилка TMDB (' + res.status + ')');
+  const data = await res.json();
+  return (data.backdrops || []).map(b => TMDB_BACKDROP_BASE + b.file_path);
+}
+
 function twitchRedirectUri(){
   const path = window.location.pathname;
   const base = path.slice(0, path.lastIndexOf('/') + 1);
