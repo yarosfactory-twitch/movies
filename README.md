@@ -110,13 +110,14 @@ service cloud.firestore {
     match /reactions/{movieId} {
       allow read: if true;
       allow write: if request.resource.data.keys().hasAny(['fire','heart','laugh','sad','sick','ratingSum','ratingCount'])
-                   && (!('fire' in request.resource.data) || (request.resource.data.fire is int && request.resource.data.fire >= 0))
-                   && (!('heart' in request.resource.data) || (request.resource.data.heart is int && request.resource.data.heart >= 0))
-                   && (!('laugh' in request.resource.data) || (request.resource.data.laugh is int && request.resource.data.laugh >= 0))
-                   && (!('sad' in request.resource.data) || (request.resource.data.sad is int && request.resource.data.sad >= 0))
-                   && (!('sick' in request.resource.data) || (request.resource.data.sick is int && request.resource.data.sick >= 0))
-                   && (!('ratingSum' in request.resource.data) || (request.resource.data.ratingSum is number && request.resource.data.ratingSum >= 0))
-                   && (!('ratingCount' in request.resource.data) || (request.resource.data.ratingCount is int && request.resource.data.ratingCount >= 0));
+                   && request.resource.data.keys().hasOnly(['fire','heart','laugh','sad','sick','ratingSum','ratingCount'])
+                   && (!('fire' in request.resource.data) || (request.resource.data.fire is int && request.resource.data.fire >= 0 && request.resource.data.fire <= 100000))
+                   && (!('heart' in request.resource.data) || (request.resource.data.heart is int && request.resource.data.heart >= 0 && request.resource.data.heart <= 100000))
+                   && (!('laugh' in request.resource.data) || (request.resource.data.laugh is int && request.resource.data.laugh >= 0 && request.resource.data.laugh <= 100000))
+                   && (!('sad' in request.resource.data) || (request.resource.data.sad is int && request.resource.data.sad >= 0 && request.resource.data.sad <= 100000))
+                   && (!('sick' in request.resource.data) || (request.resource.data.sick is int && request.resource.data.sick >= 0 && request.resource.data.sick <= 100000))
+                   && (!('ratingSum' in request.resource.data) || (request.resource.data.ratingSum is number && request.resource.data.ratingSum >= 0 && request.resource.data.ratingSum <= 1000000))
+                   && (!('ratingCount' in request.resource.data) || (request.resource.data.ratingCount is int && request.resource.data.ratingCount >= 0 && request.resource.data.ratingCount <= 100000));
       allow delete: if false; // ніхто не має видаляти весь документ реакцій цілком
 
       match /comments/{commentId} {
