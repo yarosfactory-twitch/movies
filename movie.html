@@ -191,7 +191,7 @@ function renderMovie(m){
   document.title = (m.title || 'Фільм') + ' — yarosfactory';
 
   const posterInner = m.poster
-    ? `<img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(m.title)}</div>'">`
+    ? `<img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" data-title="${escapeHtml(m.title)}" onerror="posterFallback(this)">`
     : `<div class="no-poster">${escapeHtml(m.title)}</div>`;
 
   let tagHtml;
