@@ -129,7 +129,7 @@ let isSpinning = false;
 
 function rowHtml(it){
   const thumb = it.poster
-    ? `<img class="thumb" src="${escapeHtml(it.poster)}" alt="" loading="lazy" data-title="${escapeHtml((it.title||'').slice(0,10))}" onerror="posterFallback(this, 'no-thumb')">`
+    ? `<img class="thumb" src="${escapeAttr(it.poster)}" alt="" loading="lazy" data-title="${escapeAttr((it.title||'').slice(0,10))}" onerror="posterFallback(this, 'no-thumb')">`
     : `<div class="no-thumb">${escapeHtml((it.title || '').slice(0, 10))}</div>`;
   return `<div class="reel-row">${thumb}<div class="title">${escapeHtml(it.title || '')}</div></div>`;
 }
