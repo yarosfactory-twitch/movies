@@ -182,7 +182,7 @@ function render(){
       : (isFuture ? `<div class="cal-free-label">Вільно</div>` : '');
 
     const clickAttr = hasMovie && movies.length === 1
-      ? ` data-id="${escapeHtml(movieId(movies[0]))}"`
+      ? ` data-id="${escapeAttr(movieId(movies[0]))}"`
       : '';
 
     return `<div class="${cls}"${clickAttr}><div class="cal-num">${c.day}</div>${titleLine}</div>`;
