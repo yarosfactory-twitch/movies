@@ -159,13 +159,13 @@ function render(){
 
   grid.innerHTML = filtered.map((m, i) => {
     const posterInner = m.poster
-      ? `<img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" loading="lazy" data-title="${escapeHtml(m.title)}" onerror="posterFallback(this)">`
+      ? `<img src="${escapeAttr(m.poster)}" alt="${escapeAttr(m.title)}" loading="lazy" data-title="${escapeAttr(m.title)}" onerror="posterFallback(this)">`
       : `<div class="no-poster">${escapeHtml(m.title)}</div>`;
     const genreLabel = genresOf(m).join(' · ');
     const hostRating = m.rating ? (Number.isInteger(m.rating) ? m.rating : m.rating.toFixed(1)) : '';
 
     return `
-    <div class="card" style="animation-delay:${Math.min(i*35, 350)}ms" data-id="${escapeHtml(movieId(m))}">
+    <div class="card" style="animation-delay:${Math.min(i*35, 350)}ms" data-id="${escapeAttr(movieId(m))}">
       <div class="poster">
         ${posterInner}
         <div class="corner-tr"></div><div class="corner-br"></div>
@@ -237,7 +237,7 @@ function buildStats(){
 function buildChips(){
   const genres = ['Усі', ...new Set(ALL_MOVIES.flatMap(m => genresOf(m)))];
   chipsEl.innerHTML = genres.map(g =>
-    `<button class="chip ${g===activeGenre?'active':''}" data-genre="${escapeHtml(g)}">${escapeHtml(g)}</button>`
+    `<button class="chip ${g===activeGenre?'active':''}" data-genre="${escapeAttr(g)}">${escapeHtml(g)}</button>`
   ).join('');
 
   chipsEl.querySelectorAll('.chip').forEach(btn=>{
