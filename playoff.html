@@ -227,7 +227,7 @@ function shuffle(arr){
 
 function posterHtml(it){
   return it.poster
-    ? `<img src="${escapeHtml(it.poster)}" alt="" loading="lazy" data-title="${escapeHtml(it.title||'')}" onerror="posterFallback(this)">`
+    ? `<img src="${escapeAttr(it.poster)}" alt="" loading="lazy" data-title="${escapeAttr(it.title||'')}" onerror="posterFallback(this)">`
     : `<div class="no-poster">${escapeHtml(it.title || '')}</div>`;
 }
 
@@ -472,7 +472,7 @@ function populateSetupFilters(){
 
   const genreSel = document.getElementById('genreFilter');
   genreSel.innerHTML = '<option value="">Будь-який</option>'
-    + [...genreSet].sort().map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+    + [...genreSet].sort().map(g => `<option value="${escapeAttr(g)}">${escapeHtml(g)}</option>`).join('');
 
   const yearSel = document.getElementById('yearFilter');
   yearSel.innerHTML = '<option value="">Будь-який</option>'
