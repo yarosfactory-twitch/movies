@@ -76,15 +76,10 @@ async function init(){
     return;
   }
 
-  if(!firebaseReady){
-    grid.innerHTML = '<div class="empty-mini">Список тимчасово недоступний.</div>';
-    return;
-  }
-
   try{
-    const snap = await db.collection('suggestions').where('status', '==', 'approved').get();
-    const mine = snap.docs
-      .map(doc => doc.data())
+    const res = await fetch('wishlist.json');
+    const list = res.ok ? await res.json() : [];
+    const mine = (Array.isArray(list) ? list : [])
       .filter(d => (d.submittedBy || '').toLowerCase() === user.login.toLowerCase());
     renderCards(mine);
   }catch(err){
