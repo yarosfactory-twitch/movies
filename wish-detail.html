@@ -111,7 +111,7 @@ async function render(){
   document.title = title + ' — побажання — yarosfactory';
 
   const posterInner = poster
-    ? `<img src="${escapeHtml(poster)}" alt="${escapeHtml(title)}">`
+    ? `<img src="${escapeAttr(poster)}" alt="${escapeAttr(title)}">`
     : `<div class="no-poster">${escapeHtml(title)}</div>`;
 
   const suggestHref = 'wishlist.html?title=' + encodeURIComponent(title)
