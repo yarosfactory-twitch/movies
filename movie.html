@@ -191,7 +191,7 @@ function renderMovie(m){
   document.title = (m.title || 'Фільм') + ' — yarosfactory';
 
   const posterInner = m.poster
-    ? `<img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" data-title="${escapeHtml(m.title)}" onerror="posterFallback(this)">`
+    ? `<img src="${escapeAttr(m.poster)}" alt="${escapeAttr(m.title)}" data-title="${escapeAttr(m.title)}" onerror="posterFallback(this)">`
     : `<div class="no-poster">${escapeHtml(m.title)}</div>`;
 
   let tagHtml;
@@ -377,7 +377,7 @@ async function loadSimilar(tmdbId){
         <div class="similar-strip">
           ${list.slice(0, 10).map(r => {
             const posterInner = r.poster
-              ? `<img src="${escapeHtml(r.poster)}" alt="">`
+              ? `<img src="${escapeAttr(r.poster)}" alt="">`
               : `<div class="no-poster">${escapeHtml(r.title)}</div>`;
             const suggestHref = 'wishlist.html?title=' + encodeURIComponent(r.title || '')
               + '&year=' + encodeURIComponent(r.year || '')
@@ -414,7 +414,7 @@ function renderEditPanel(m){
       <h3>Редагувати запис</h3>
 
       <label for="eTitle">Назва</label>
-      <input type="text" id="eTitle" value="${escapeHtml(m.title || '')}">
+      <input type="text" id="eTitle" value="${escapeAttr(m.title || '')}">
 
       <div class="edit-row">
         <div>
@@ -428,22 +428,22 @@ function renderEditPanel(m){
       </div>
 
       <label for="eGenre">Жанри (через кому)</label>
-      <input type="text" id="eGenre" value="${escapeHtml(genresOf(m).join(', '))}">
+      <input type="text" id="eGenre" value="${escapeAttr(genresOf(m).join(', '))}">
 
       <label for="eEpisodes">Серії</label>
-      <input type="text" id="eEpisodes" value="${escapeHtml(m.episodes || '')}">
+      <input type="text" id="eEpisodes" value="${escapeAttr(m.episodes || '')}">
 
       <label for="ePoster">Посилання на постер</label>
-      <input type="text" id="ePoster" value="${escapeHtml(m.poster || '')}">
+      <input type="text" id="ePoster" value="${escapeAttr(m.poster || '')}">
 
       <label for="eOrderedBy">Замовник (Twitch-логін)</label>
-      <input type="text" id="eOrderedBy" value="${escapeHtml(m.orderedBy || '')}">
+      <input type="text" id="eOrderedBy" value="${escapeAttr(m.orderedBy || '')}">
 
       <label for="eNote">Опис / нотатка</label>
       <textarea id="eNote" rows="3">${escapeHtml(m.note || '')}</textarea>
 
       <p class="edit-hint">Ідентифікатор фільму (коментарі й оцінки прив'язані саме до нього) — не чіпай, якщо не знаєш навіщо: <code>${escapeHtml(currentId)}</code></p>
-      <input type="hidden" id="eOriginalId" value="${escapeHtml(currentId)}">
+      <input type="hidden" id="eOriginalId" value="${escapeAttr(currentId)}">
 
       <button type="button" class="edit-save" id="editSaveBtn">Зберегти зміни</button>
       <div class="edit-status" id="editStatusBox"></div>
