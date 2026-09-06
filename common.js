@@ -146,8 +146,9 @@ function encodeBase64Utf8(str){
 }
 
 /* transformFn(arr) -> new/mutated array. Повертає новий вміст movies.json (рядок). */
-async function commitMoviesArray(transformFn, commitMessage, onRetry, maxAttempts = 3){
-  const { token, owner, repo, path, branch } = ghSettings();
+async function commitMoviesArray(transformFn, commitMessage, onRetry, maxAttempts = 3, explicitPath, createIfMissing){
+  const { token, owner, repo, path: settingsPath, branch } = ghSettings();
+  const path = explicitPath || settingsPath;
   if(!token) throw new Error('Немає GitHub-токена. Введи його на сторінці add-movie.html.');
 
   const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
@@ -155,28 +156,38 @@ async function commitMoviesArray(transformFn, commitMessage, onRetry, maxAttempt
 
   for(let attempt = 1; attempt <= maxAttempts; attempt++){
     const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, { headers });
-    if(!getRes.ok){
+
+    let arr = [];
+    let sha = undefined;
+
+    if(getRes.ok){
+      const getData = await getRes.json();
+      sha = getData.sha;
+      const currentContent = decodeBase64Utf8(getData.content);
+      try{
+        arr = JSON.parse(currentContent);
+      }catch(e){
+        throw new Error(path + ' пошкоджений або не є валідним JSON.');
+      }
+      if(!Array.isArray(arr)) throw new Error(path + ' має бути масивом.');
+    } else if(getRes.status === 404 && createIfMissing){
+      arr = []; // файл ще не існує — створюємо з порожнього масиву
+    } else {
       if(getRes.status === 401) throw new Error('Токен недійсний або прострочений.');
       if(getRes.status === 404) throw new Error('Файл або репозиторій не знайдено.');
       throw new Error(`Помилка читання файлу (${getRes.status}).`);
     }
-    const getData = await getRes.json();
-    const currentContent = decodeBase64Utf8(getData.content);
-    let arr;
-    try{
-      arr = JSON.parse(currentContent);
-    }catch(e){
-      throw new Error('movies.json пошкоджений або не є валідним JSON.');
-    }
-    if(!Array.isArray(arr)) throw new Error('movies.json має бути масивом.');
 
     arr = transformFn(arr);
     const newContent = JSON.stringify(arr, null, 2) + '\n';
 
+    const body = { message: commitMessage, content: encodeBase64Utf8(newContent), branch };
+    if(sha) body.sha = sha;
+
     const putRes = await fetch(apiUrl, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: commitMessage, content: encodeBase64Utf8(newContent), sha: getData.sha, branch })
+      body: JSON.stringify(body)
     });
 
     if(putRes.ok) return newContent;
