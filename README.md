@@ -134,7 +134,12 @@ service cloud.firestore {
                            && request.resource.data.raw.size() > 0
                            && request.resource.data.raw.size() < 300)
                         );
-      allow update, delete: if true;
+      // Схвалення тепер відбувається через wishlist.json (GitHub), не тут —
+      // тому "update" (підміна статусу на approved) більше нікому не потрібне і назавжди заблоковане.
+      // Видалення дозволене всім: це лише прибирає запис із черги на модерацію (низький ризик),
+      // а не публікує щось видиме всім.
+      allow update: if false;
+      allow delete: if true;
     }
 
     match /quizPoints/{userLogin} {
