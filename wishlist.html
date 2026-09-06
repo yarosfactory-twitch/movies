@@ -450,7 +450,7 @@ function renderApproved(){
 
       approvedGrid.innerHTML = items.map(d => {
         const posterInner = d.poster
-          ? `<img src="${escapeHtml(d.poster)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(d.title || '')}</div>'">`
+          ? `<img src="${escapeHtml(d.poster)}" alt="" loading="lazy" data-title="${escapeHtml(d.title || '')}" onerror="posterFallback(this)">`
           : `<div class="no-poster">${escapeHtml(d.title || '')}</div>`;
         return `
           <div class="wish-card" data-href="${detailHref(d)}">
