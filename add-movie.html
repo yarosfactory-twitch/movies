@@ -318,7 +318,7 @@ tmdbSearchInput.addEventListener('input', () => {
       }
       tmdbSearchResults.innerHTML = results.slice(0, 8).map((r, i) => {
         const thumb = r.poster
-          ? `<img src="${escapeHtml(r.poster)}" alt="">`
+          ? `<img src="${escapeAttr(r.poster)}" alt="">`
           : `<div class="no-thumb">?</div>`;
         return `
           <div class="tmdb-result" data-idx="${i}">
