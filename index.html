@@ -175,7 +175,7 @@ function nodeHtml(idx, offset){
     inner = `<img src="no-order.jpg" alt="" draggable="false" data-title="?" onerror="posterFallback(this, 'q')">`;
   } else {
     inner = m.poster
-      ? `<img src="${escapeHtml(m.poster)}" alt="" draggable="false" data-title="${escapeHtml(m.title||'')}" onerror="posterFallback(this, 'mono')">`
+      ? `<img src="${escapeAttr(m.poster)}" alt="" draggable="false" data-title="${escapeAttr(m.title||'')}" onerror="posterFallback(this, 'mono')">`
       : `<span class="mono">${escapeHtml(m.title||'')}</span>`;
   }
   const flame = status === 'today' ? '<span class="flame">🔥</span>' : '';
