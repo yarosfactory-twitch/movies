@@ -194,18 +194,12 @@ spinBtn.addEventListener('click', () => {
 });
 
 function loadSuggestions(){
-  if(!firebaseReady){
-    emptyMsg.textContent = 'Список тимчасово недоступний.';
-    emptyMsg.style.display = '';
-    wheelSection.style.display = 'none';
-    return;
-  }
-  db.collection('suggestions').where('status', '==', 'approved')
-    .orderBy('createdAt', 'desc')
-    .onSnapshot(snap => {
-      const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      updateItems(list);
-    }, err => {
+  fetch('wishlist.json')
+    .then(res => res.ok ? res.json() : [])
+    .then(list => {
+      updateItems(Array.isArray(list) ? list : []);
+    })
+    .catch(err => {
       emptyMsg.textContent = 'Помилка завантаження: ' + err.message;
       emptyMsg.style.display = '';
       wheelSection.style.display = 'none';
