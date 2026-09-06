@@ -52,14 +52,14 @@ function renderCards(movies){
   }
   grid.innerHTML = movies.map((m, i) => {
     const posterInner = m.poster
-      ? `<img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" loading="lazy" data-title="${escapeHtml(m.title)}" onerror="posterFallback(this)">`
+      ? `<img src="${escapeAttr(m.poster)}" alt="${escapeAttr(m.title)}" loading="lazy" data-title="${escapeAttr(m.title)}" onerror="posterFallback(this)">`
       : `<div class="no-poster">${escapeHtml(m.title)}</div>`;
     const genreLabel = genresOf(m).join(' · ');
     const status = statusOf(m);
     const dateLabel = status === 'planned' ? `заплановано на ${fmtDateLong(m.watched)}` : `переглянуто ${fmtDateLong(m.watched)}`;
 
     return `
-    <div class="card" style="animation-delay:${Math.min(i*35, 350)}ms" data-id="${escapeHtml(movieId(m))}">
+    <div class="card" style="animation-delay:${Math.min(i*35, 350)}ms" data-id="${escapeAttr(movieId(m))}">
       <div class="poster">
         ${posterInner}
         <div class="corner-tr"></div><div class="corner-br"></div>
