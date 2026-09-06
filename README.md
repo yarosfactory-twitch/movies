@@ -109,7 +109,14 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /reactions/{movieId} {
       allow read: if true;
-      allow write: if request.resource.data.keys().hasAny(['fire','heart','laugh','sad','sick','ratingSum','ratingCount']);
+      allow write: if request.resource.data.keys().hasAny(['fire','heart','laugh','sad','sick','ratingSum','ratingCount'])
+                   && (!('fire' in request.resource.data) || (request.resource.data.fire is int && request.resource.data.fire >= 0))
+                   && (!('heart' in request.resource.data) || (request.resource.data.heart is int && request.resource.data.heart >= 0))
+                   && (!('laugh' in request.resource.data) || (request.resource.data.laugh is int && request.resource.data.laugh >= 0))
+                   && (!('sad' in request.resource.data) || (request.resource.data.sad is int && request.resource.data.sad >= 0))
+                   && (!('sick' in request.resource.data) || (request.resource.data.sick is int && request.resource.data.sick >= 0))
+                   && (!('ratingSum' in request.resource.data) || (request.resource.data.ratingSum is number && request.resource.data.ratingSum >= 0))
+                   && (!('ratingCount' in request.resource.data) || (request.resource.data.ratingCount is int && request.resource.data.ratingCount >= 0));
 
       match /comments/{commentId} {
         allow read: if true;
@@ -144,7 +151,11 @@ service cloud.firestore {
 
     match /quizPoints/{userLogin} {
       allow read: if true;
-      allow write: if request.resource.data.points is int && request.resource.data.points >= 0;
+      allow write: if request.resource.data.points is int
+                   && request.resource.data.points >= 0
+                   && (resource == null
+                       || (request.resource.data.points <= resource.data.points + 5
+                           && request.resource.data.points >= resource.data.points - 25));
     }
   }
 }
