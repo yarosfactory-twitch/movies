@@ -520,12 +520,20 @@ document.getElementById('batchCommitBtn').addEventListener('click', async () => 
       true
     );
 
-    await Promise.all(batch.map(b => db.collection('suggestions').doc(b.id).delete().catch(() => {})));
+    const failedIds = [];
+    await Promise.all(batch.map(b =>
+      db.collection('suggestions').doc(b.id).delete().catch(err => {
+        console.warn('Не вдалося прибрати з модерації:', b.title, err.message);
+        failedIds.push(b.title);
+      })
+    ));
 
     approvalBatch = [];
     updateBatchPanel();
     statusEl.className = 'batch-status ok';
-    statusEl.textContent = `Записано! Сайт оновиться протягом хвилини.`;
+    statusEl.textContent = failedIds.length
+      ? `Записано! Сайт оновиться протягом хвилини. Але не вдалось прибрати з модерації: ${failedIds.join(', ')} — доведеться видалити вручну.`
+      : `Записано! Сайт оновиться протягом хвилини.`;
   }catch(err){
     statusEl.className = 'batch-status err';
     statusEl.textContent = 'Не вдалося записати: ' + err.message;
