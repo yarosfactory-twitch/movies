@@ -159,7 +159,7 @@ function render(){
 
   grid.innerHTML = filtered.map((m, i) => {
     const posterInner = m.poster
-      ? `<img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(m.title)}</div>'">`
+      ? `<img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" loading="lazy" data-title="${escapeHtml(m.title)}" onerror="posterFallback(this)">`
       : `<div class="no-poster">${escapeHtml(m.title)}</div>`;
     const genreLabel = genresOf(m).join(' · ');
     const hostRating = m.rating ? (Number.isInteger(m.rating) ? m.rating : m.rating.toFixed(1)) : '';
