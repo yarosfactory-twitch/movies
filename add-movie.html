@@ -294,7 +294,6 @@ fetch('movies.json')
   .catch(() => {});
 
 // prefill from a wishlist "Опублікувати" link (title/year/poster only — date and замовник stay empty on purpose)
-let usedSuggestionId = null;
 let pickedTmdbId = null;
 
 const tmdbSearchInput = document.getElementById('tmdbSearchInput');
@@ -365,26 +364,22 @@ tmdbSearchInput.addEventListener('input', () => {
   if(params.get('genre')) document.getElementById('fGenre').value = params.get('genre');
   if(params.get('note')) document.getElementById('fNote').value = params.get('note');
   if(params.get('tmdbId')) pickedTmdbId = parseInt(params.get('tmdbId'), 10);
-  if(params.get('sid')) usedSuggestionId = params.get('sid');
   document.getElementById('fWatched').focus();
 })();
 
 async function cleanupUsedSuggestion(finalTitle){
-  if(!(typeof firebaseReady !== 'undefined' && firebaseReady)) return;
   try{
-    if(usedSuggestionId){
-      await db.collection('suggestions').doc(usedSuggestionId).delete();
-    } else {
-      // fallback: exact title match against any approved suggestion
-      const snap = await db.collection('suggestions').where('status', '==', 'approved').where('title', '==', finalTitle).get();
-      const batch = [];
-      snap.forEach(doc => batch.push(db.collection('suggestions').doc(doc.id).delete()));
-      await Promise.all(batch);
-    }
+    await commitMoviesArray(
+      arr => arr.filter(w => (w.title || '').trim().toLowerCase() !== (finalTitle || '').trim().toLowerCase()),
+      `Побажання: прибрано «${finalTitle}» (опубліковано)`,
+      null,
+      3,
+      'wishlist.json',
+      true
+    );
   }catch(err){
     console.warn('Не вдалося прибрати побажання зі списку:', err.message);
   }
-  usedSuggestionId = null;
 }
 
 function showStatus(kind, html){
