@@ -117,6 +117,7 @@ service cloud.firestore {
                    && (!('sick' in request.resource.data) || (request.resource.data.sick is int && request.resource.data.sick >= 0))
                    && (!('ratingSum' in request.resource.data) || (request.resource.data.ratingSum is number && request.resource.data.ratingSum >= 0))
                    && (!('ratingCount' in request.resource.data) || (request.resource.data.ratingCount is int && request.resource.data.ratingCount >= 0));
+      allow delete: if false; // ніхто не має видаляти весь документ реакцій цілком
 
       match /comments/{commentId} {
         allow read: if true;
