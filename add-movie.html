@@ -583,7 +583,7 @@ form.addEventListener('submit', async (e) => {
 
   try{
     const newContent = await commitMovieWithRetry(apiUrl, headers, branch, movie, title);
-    showStatus('ok', `«${title}» додано! Сайт оновиться протягом хвилини — <a href="movie.html?id=${encodeURIComponent(slugify(title))}" target="_blank">перевірити сторінку фільму →</a>`);
+    showStatus('ok', `«${title}» додано! Сайт оновиться протягом хвилини — <a href="movie.html?id=${encodeURIComponent(slugify(title))}" target="_blank" rel="noopener">перевірити сторінку фільму →</a>`);
 
     await cleanupUsedSuggestion(title);
 
