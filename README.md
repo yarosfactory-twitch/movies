@@ -152,6 +152,10 @@ service cloud.firestore {
 
     match /quizPoints/{userLogin} {
       allow read: if true;
+      // Без Firebase Auth неможливо перевірити, що пише саме userLogin, а не хтось інший
+      // (той самий компроміс, що й для suggestions вище) — обмежуємо лише зміну за один
+      // запис (+5/-25), щоб не можна було миттєво накрутити чи обнулити рахунок.
+      // Найгірший наслідок — перекручені цифри в лідерборді розваги, нічого критичного.
       allow write: if request.resource.data.points is int
                    && request.resource.data.points >= 0
                    && (resource == null
