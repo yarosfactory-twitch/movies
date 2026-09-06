@@ -172,10 +172,10 @@ function nodeHtml(idx, offset){
   const status = statusOf(m);
   let inner;
   if(m.__placeholder){
-    inner = `<img src="no-order.jpg" alt="" draggable="false" onerror="this.parentElement.innerHTML='<span class=&quot;q&quot;>?</span>'">`;
+    inner = `<img src="no-order.jpg" alt="" draggable="false" data-title="?" onerror="posterFallback(this, 'q')">`;
   } else {
     inner = m.poster
-      ? `<img src="${escapeHtml(m.poster)}" alt="" draggable="false" onerror="this.parentElement.innerHTML='<span class=&quot;mono&quot;>${escapeHtml(m.title||'')}</span>'">`
+      ? `<img src="${escapeHtml(m.poster)}" alt="" draggable="false" data-title="${escapeHtml(m.title||'')}" onerror="posterFallback(this, 'mono')">`
       : `<span class="mono">${escapeHtml(m.title||'')}</span>`;
   }
   const flame = status === 'today' ? '<span class="flame">🔥</span>' : '';
