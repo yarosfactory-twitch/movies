@@ -223,7 +223,7 @@ async function renderQuestion(){
     </div>
     <div class="frame-wrap">
       <div class="frame-loading">Завантаження кадру…</div>
-      <img src="${escapeHtml(q.image)}" alt="" style="opacity:0" onload="this.style.opacity=1; this.previousElementSibling.style.display='none';">
+      <img src="${escapeAttr(q.image)}" alt="" style="opacity:0" onload="this.style.opacity=1; this.previousElementSibling.style.display='none';">
     </div>
     <div class="answers" id="answersRow"><div class="empty-mini">Готую варіанти…</div></div>
   `;
@@ -251,7 +251,7 @@ async function renderQuestion(){
   if(!answersRow) return; // користувач вже перейшов далі, поки йшов запит
 
   answersRow.innerHTML = options.map(opt =>
-    `<button type="button" class="answer-btn" data-title="${escapeHtml(opt)}">${escapeHtml(opt)}</button>`
+    `<button type="button" class="answer-btn" data-title="${escapeAttr(opt)}">${escapeHtml(opt)}</button>`
   ).join('')
   + `<button type="button" class="fifty-btn" id="fiftyBtn" ${(!currentUser || getPoints() < FIFTY_FIFTY_COST) ? 'disabled' : ''}>50/50 <img src="coin.png" alt="" onerror="this.style.display='none'"> −${FIFTY_FIFTY_COST}</button>`;
 
