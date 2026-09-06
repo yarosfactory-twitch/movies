@@ -227,7 +227,7 @@ function shuffle(arr){
 
 function posterHtml(it){
   return it.poster
-    ? `<img src="${escapeHtml(it.poster)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;no-poster&quot;>${escapeHtml(it.title||'')}</div>'">`
+    ? `<img src="${escapeHtml(it.poster)}" alt="" loading="lazy" data-title="${escapeHtml(it.title||'')}" onerror="posterFallback(this)">`
     : `<div class="no-poster">${escapeHtml(it.title || '')}</div>`;
 }
 
