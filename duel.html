@@ -473,18 +473,11 @@ document.getElementById('setupStartBtn').addEventListener('click', () => {
 });
 
 function loadSuggestions(){
-  if(!firebaseReady){
-    emptyMsg.textContent = 'Список тимчасово недоступний.';
-    emptyMsg.style.display = '';
-    duelSection.style.display = 'none';
-    return;
-  }
-  db.collection('suggestions').where('status', '==', 'approved')
-    .orderBy('createdAt', 'desc')
-    .onSnapshot(snap => {
-      const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      allApprovedItems = list;
-      if(list.length < 2){
+  fetch('wishlist.json')
+    .then(res => res.ok ? res.json() : [])
+    .then(list => {
+      allApprovedItems = Array.isArray(list) ? list : [];
+      if(allApprovedItems.length < 2){
         document.getElementById('setupPanel').style.display = 'none';
         duelSection.style.display = 'none';
         emptyMsg.style.display = '';
@@ -495,7 +488,8 @@ function loadSuggestions(){
         populateSetupFilters();
         document.getElementById('setupPanel').style.display = '';
       }
-    }, err => {
+    })
+    .catch(err => {
       emptyMsg.textContent = 'Помилка завантаження: ' + err.message;
       emptyMsg.style.display = '';
       duelSection.style.display = 'none';
