@@ -107,6 +107,21 @@
     padding:8px 10px; font-family:'Golos Text', sans-serif; font-size:12.5px; outline:none;
   }
   .pending-actions{ display:flex; gap:8px; }
+
+  .batch-panel{
+    margin-top:18px; padding-top:18px; border-top:1px solid var(--gold); text-align:center;
+  }
+  .batch-count{ font-size:13px; color:var(--gold-bright); margin-bottom:10px; }
+  .batch-commit-btn{
+    background:var(--gold); border:1px solid var(--gold); color:#1b1610;
+    padding:12px 26px; font-size:13px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer;
+  }
+  .batch-commit-btn:hover{ background:var(--gold-bright); }
+  .batch-commit-btn:disabled{ opacity:0.5; cursor:default; }
+  .batch-status{ margin-top:10px; font-size:12.5px; }
+  .batch-status.ok{ color:var(--teal); }
+  .batch-status.err{ color:#c98a7a; }
   .pending-actions button{
     padding:8px 16px; font-size:12px; letter-spacing:0.03em; text-transform:uppercase; cursor:pointer; font-family:inherit;
   }
@@ -169,6 +184,11 @@
   <div class="panel" id="adminPanel" style="display:none;">
     <h2>На модерації</h2>
     <div id="pendingList"><div class="empty-mini">Завантаження…</div></div>
+    <div class="batch-panel" id="batchPanel" style="display:none;">
+      <div class="batch-count" id="batchCount"></div>
+      <button type="button" class="batch-commit-btn" id="batchCommitBtn">📥 Записати у wishlist.json</button>
+      <div class="batch-status" id="batchStatus"></div>
+    </div>
   </div>
 
   <div class="helper-row">
@@ -396,17 +416,15 @@ wishSubmitBtn.addEventListener('click', async () => {
 });
 
 function renderApproved(){
-  if(!firebaseReady){
-    approvedGrid.innerHTML = '<div class="empty-mini">Список тимчасово недоступний.</div>';
-    return;
-  }
-  db.collection('suggestions').where('status', '==', 'approved')
-    .orderBy('createdAt', 'desc')
-    .onSnapshot(snap => {
-      if(snap.empty){
+  fetch('wishlist.json')
+    .then(res => res.ok ? res.json() : [])
+    .then(list => {
+      const items = Array.isArray(list) ? list : [];
+      approvedItemsCache = items;
+      document.getElementById('approvedHeading').textContent = `Хочуть подивитись (${items.length})`;
+
+      if(items.length === 0){
         approvedGrid.innerHTML = '<div class="empty-mini">Поки що порожньо — стань першим, хто запропонує фільм!</div>';
-        approvedItemsCache = [];
-        document.getElementById('approvedHeading').textContent = 'Хочуть подивитись (0)';
         return;
       }
 
@@ -417,8 +435,7 @@ function renderApproved(){
           + '&genre=' + encodeURIComponent((d.genre || []).join(', '))
           + '&note=' + encodeURIComponent(d.note || '')
           + '&wanted=' + encodeURIComponent(d.wantedBy || '')
-          + '&tmdbId=' + encodeURIComponent(d.tmdbId || '')
-          + '&sid=' + encodeURIComponent(d.id);
+          + '&tmdbId=' + encodeURIComponent(d.tmdbId || '');
       }
 
       function detailHref(d){
@@ -430,10 +447,6 @@ function renderApproved(){
           + '&wanted=' + encodeURIComponent(d.wantedBy || '')
           + '&tmdbId=' + encodeURIComponent(d.tmdbId || '');
       }
-
-      const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      approvedItemsCache = items;
-      document.getElementById('approvedHeading').textContent = `Хочуть подивитись (${items.length})`;
 
       approvedGrid.innerHTML = items.map(d => {
         const posterInner = d.poster
@@ -458,10 +471,68 @@ function renderApproved(){
           window.location.href = card.dataset.href;
         });
       });
-    }, err => {
+    })
+    .catch(err => {
       approvedGrid.innerHTML = `<div class="empty-mini">Помилка завантаження: ${escapeHtml(err.message)}</div>`;
     });
 }
+
+let approvalBatch = [];
+let resolvedIds = new Set();
+
+function updateBatchPanel(){
+  const panel = document.getElementById('batchPanel');
+  const count = document.getElementById('batchCount');
+  const btn = document.getElementById('batchCommitBtn');
+  if(approvalBatch.length === 0){
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = '';
+  count.textContent = `Готово до запису: ${approvalBatch.length}`;
+  btn.disabled = false;
+}
+
+document.getElementById('batchCommitBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('batchCommitBtn');
+  const statusEl = document.getElementById('batchStatus');
+  btn.disabled = true;
+  statusEl.className = 'batch-status';
+  statusEl.textContent = 'Записую…';
+
+  const batch = approvalBatch.slice();
+  try{
+    await commitMoviesArray(
+      arr => arr.concat(batch.map(b => ({
+        title: b.title,
+        year: b.year || undefined,
+        poster: b.poster || undefined,
+        genre: (b.genre && b.genre.length) ? b.genre : undefined,
+        note: b.note || undefined,
+        wantedBy: b.wantedBy || undefined,
+        submittedBy: b.submittedBy || undefined,
+        tmdbId: b.tmdbId || undefined
+      }))),
+      `Побажання: додано ${batch.length} фільм(ів)`,
+      null,
+      3,
+      'wishlist.json',
+      true
+    );
+
+    await Promise.all(batch.map(b => db.collection('suggestions').doc(b.id).delete().catch(() => {})));
+
+    approvalBatch = [];
+    updateBatchPanel();
+    statusEl.className = 'batch-status ok';
+    statusEl.textContent = `Записано! Сайт оновиться протягом хвилини.`;
+  }catch(err){
+    statusEl.className = 'batch-status err';
+    statusEl.textContent = 'Не вдалося записати: ' + err.message;
+  }finally{
+    btn.disabled = approvalBatch.length === 0;
+  }
+});
 
 function renderPending(){
   if(!firebaseReady) return;
@@ -469,11 +540,13 @@ function renderPending(){
     .orderBy('createdAt', 'asc')
     .onSnapshot(snap => {
       pendingItemsCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      if(snap.empty){
+      const visibleDocs = snap.docs.filter(doc => !resolvedIds.has(doc.id));
+
+      if(visibleDocs.length === 0){
         pendingList.innerHTML = '<div class="empty-mini">Нічого немає на модерації.</div>';
         return;
       }
-      pendingList.innerHTML = snap.docs.map(doc => {
+      pendingList.innerHTML = visibleDocs.map(doc => {
         const d = doc.data();
         const dateStr = d.createdAt && d.createdAt.toDate ? fmtDateShort(d.createdAt.toDate()) : '';
         const who = `від ${escapeHtml(d.submittedByName || d.submittedBy || 'глядача')} · ${dateStr}`;
@@ -496,7 +569,7 @@ function renderPending(){
               <div class="meta">${who}</div>
               <div class="pending-actions">
                 <button type="button" class="btn-approve">Схвалити</button>
-                <button type="button" class="btn-reject">Видалити</button>
+                <button type="button" class="btn-reject">Відхилити</button>
               </div>
             </div>
           `;
@@ -514,7 +587,7 @@ function renderPending(){
             </div>
             <div class="pending-actions">
               <button type="button" class="btn-approve">Схвалити</button>
-              <button type="button" class="btn-reject">Видалити</button>
+              <button type="button" class="btn-reject">Відхилити</button>
             </div>
           </div>
         `;
@@ -523,33 +596,41 @@ function renderPending(){
       pendingList.querySelectorAll('.pending-item').forEach(item => {
         const id = item.dataset.id;
         const isStructured = item.dataset.structured === '1';
+        const docData = pendingItemsCache.find(p => p.id === id) || {};
 
-        item.querySelector('.btn-approve').addEventListener('click', async () => {
-          const docSnap = await db.collection('suggestions').doc(id).get();
-          const data = docSnap.data();
-          const wantedBy = data.submittedByName || data.submittedBy || 'глядач';
+        item.querySelector('.btn-approve').addEventListener('click', () => {
+          const wantedBy = docData.submittedByName || docData.submittedBy || 'глядач';
+          const submittedBy = docData.submittedBy || '';
+          let entry;
 
           if(isStructured){
-            await db.collection('suggestions').doc(id).update({
-              status: 'approved',
-              wantedBy
-            });
-            return;
+            entry = {
+              id, title: docData.title, year: docData.year, poster: docData.poster,
+              genre: docData.genre, note: docData.note, tmdbId: docData.tmdbId, wantedBy, submittedBy
+            };
+          } else {
+            const title = item.querySelector('.p-title').value.trim();
+            const year = item.querySelector('.p-year').value.trim();
+            const poster = item.querySelector('.p-poster').value.trim();
+            if(!title){ alert('Вкажи хоча б назву фільму.'); return; }
+            entry = { id, title, year: year ? parseInt(year, 10) : null, poster: poster || '', wantedBy, submittedBy };
           }
 
-          const title = item.querySelector('.p-title').value.trim();
-          const year = item.querySelector('.p-year').value.trim();
-          const poster = item.querySelector('.p-poster').value.trim();
-          if(!title){ alert('Вкажи хоча б назву фільму.'); return; }
-          await db.collection('suggestions').doc(id).update({
-            status: 'approved',
-            title,
-            year: year ? parseInt(year, 10) : null,
-            poster: poster || '',
-            wantedBy
-          });
+          approvalBatch.push(entry);
+          resolvedIds.add(id);
+          item.remove();
+          updateBatchPanel();
+          if(pendingList.children.length === 0){
+            pendingList.innerHTML = '<div class="empty-mini">Нічого немає на модерації.</div>';
+          }
         });
+
         item.querySelector('.btn-reject').addEventListener('click', async () => {
+          resolvedIds.add(id);
+          item.remove();
+          if(pendingList.children.length === 0){
+            pendingList.innerHTML = '<div class="empty-mini">Нічого немає на модерації.</div>';
+          }
           await db.collection('suggestions').doc(id).delete();
         });
       });
