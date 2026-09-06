@@ -12,8 +12,16 @@ const firebaseConfig = {
 
 let db = null;
 let firebaseReady = false;
+const RECAPTCHA_SITE_KEY = "6LdHyqwtAAAAAEJVIE3W4qpvR5RZwAIV3_WEfEHj";
 try{
   firebase.initializeApp(firebaseConfig);
+  if(firebase.appCheck){
+    try{
+      firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY), true);
+    }catch(err){
+      console.warn('App Check не вдалося активувати:', err.message);
+    }
+  }
   db = firebase.firestore();
   firebaseReady = true;
 }catch(e){
