@@ -33,6 +33,17 @@ function escapeHtml(str){
   d.textContent = str ?? '';
   return d.innerHTML;
 }
+
+// Безпечна заміна постера на текстову плашку при помилці завантаження зображення.
+// Ніколи не вбудовує назву фільму в inline JS-рядок (як робив старий onerror="...innerHTML='...'"),
+// тому апостроф чи лапки в назві фільму не можуть розірвати JS-код.
+function posterFallback(imgEl, cssClass){
+  const title = imgEl.dataset.title || '';
+  const div = document.createElement('div');
+  div.className = cssClass || imgEl.dataset.fallbackClass || 'no-poster';
+  div.textContent = title;
+  imgEl.replaceWith(div);
+}
 function fmtDateLong(d){
   const dt = new Date(d);
   if(isNaN(dt)) return d;
