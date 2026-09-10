@@ -91,6 +91,7 @@ let genre = params.get('genre') || '';
 let note = params.get('note') || '';
 const wanted = params.get('wanted') || '';
 const tmdbId = params.get('tmdbId') ? parseInt(params.get('tmdbId'), 10) : null;
+const mediaType = params.get('mediaType') || 'movie';
 
 async function render(){
   if(!title){
@@ -101,7 +102,7 @@ async function render(){
   // якщо прийшли з "Схожі фільми" — там нема жанрів/опису, дотягуємо з TMDB
   if(tmdbId && (!genre || !note)){
     try{
-      const details = await tmdbGetMovieDetails(tmdbId);
+      const details = await tmdbGetDetails(tmdbId, mediaType);
       if(!genre && details.genre && details.genre.length) genre = details.genre.join(', ');
       if(!note && details.note) note = details.note;
     }catch(err){
@@ -118,7 +119,8 @@ async function render(){
   const suggestHref = 'wishlist.html?title=' + encodeURIComponent(title)
     + '&year=' + encodeURIComponent(year || '')
     + '&poster=' + encodeURIComponent(poster || '')
-    + '&tmdbId=' + encodeURIComponent(tmdbId || '');
+    + '&tmdbId=' + encodeURIComponent(tmdbId || '')
+    + '&mediaType=' + encodeURIComponent(mediaType);
 
   content.innerHTML = `
     <div class="movie-hero">
@@ -146,7 +148,7 @@ async function loadTrailer(){
     let id = tmdbId;
     if(!id) id = await tmdbFindId(title, year);
     if(!id) return;
-    const key = await tmdbGetTrailerKey(id);
+    const key = await tmdbGetTrailerKey(id, mediaType);
     if(!key) return;
     wrap.innerHTML = `
       <button type="button" class="trailer-btn" id="trailerBtn">▶ Дивитись трейлер</button>
