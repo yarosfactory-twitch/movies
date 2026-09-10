@@ -271,6 +271,49 @@ async function tmdbGetMovieDetails(id){
   };
 }
 
+// Пошук і фільмів, і серіалів (аніме теж переважно тут) одним запитом до TMDB
+async function tmdbSearchMulti(query){
+  if(!query || !query.trim()) return [];
+  const url = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&language=uk-UA&query=${encodeURIComponent(query.trim())}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('Помилка TMDB (' + res.status + ')');
+  const data = await res.json();
+  return (data.results || [])
+    .filter(r => r.media_type === 'movie' || r.media_type === 'tv')
+    .map(r => {
+      const isTv = r.media_type === 'tv';
+      return {
+        id: r.id,
+        mediaType: isTv ? 'tv' : 'movie',
+        title: isTv ? (r.name || r.original_name || '') : (r.title || r.original_title || ''),
+        year: isTv
+          ? (r.first_air_date ? parseInt(r.first_air_date.slice(0, 4), 10) : null)
+          : (r.release_date ? parseInt(r.release_date.slice(0, 4), 10) : null),
+        poster: r.poster_path ? TMDB_IMG_BASE + r.poster_path : '',
+        overview: r.overview || ''
+      };
+    });
+}
+
+async function tmdbGetDetails(id, mediaType){
+  const type = mediaType === 'tv' ? 'tv' : 'movie';
+  const url = `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=uk-UA`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('Помилка TMDB (' + res.status + ')');
+  const data = await res.json();
+  return {
+    id: data.id,
+    mediaType: type,
+    title: type === 'tv' ? (data.name || data.original_name || '') : (data.title || data.original_title || ''),
+    year: type === 'tv'
+      ? (data.first_air_date ? parseInt(data.first_air_date.slice(0, 4), 10) : null)
+      : (data.release_date ? parseInt(data.release_date.slice(0, 4), 10) : null),
+    poster: data.poster_path ? TMDB_IMG_BASE + data.poster_path : '',
+    genre: (data.genres || []).map(g => g.name),
+    note: data.overview || ''
+  };
+}
+
 async function tmdbFindId(title, year){
   const results = await tmdbSearchMovies(title);
   if(!results.length) return null;
@@ -281,8 +324,9 @@ async function tmdbFindId(title, year){
   return results[0].id;
 }
 
-async function tmdbGetTrailerKey(id){
-  let url = `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=uk-UA`;
+async function tmdbGetTrailerKey(id, mediaType){
+  const type = mediaType === 'tv' ? 'tv' : 'movie';
+  let url = `https://api.themoviedb.org/3/${type}/${id}/videos?api_key=${TMDB_API_KEY}&language=uk-UA`;
   let res = await fetch(url);
   if(!res.ok) throw new Error('Помилка TMDB (' + res.status + ')');
   let data = await res.json();
@@ -290,7 +334,7 @@ async function tmdbGetTrailerKey(id){
     || (data.results || []).find(v => v.site === 'YouTube');
   if(!pick){
     // українських трейлерів часто нема — пробуємо англійською
-    url = `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=en-US`;
+    url = `https://api.themoviedb.org/3/${type}/${id}/videos?api_key=${TMDB_API_KEY}&language=en-US`;
     res = await fetch(url);
     if(res.ok){
       data = await res.json();
