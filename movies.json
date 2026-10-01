@@ -1363,5 +1363,21 @@
     "poster": "https://image.tmdb.org/t/p/w220_and_h330_face/zB1ZhLWQNiBkRnABbFaULodfEaj.jpg",
     "orderedBy": "iyhallo",
     "tmdbId": 438970
+  },
+  {
+    "title": "Останній акулячий торнадо: Саме час",
+    "year": 2018,
+    "genre": [
+      "Бойовик",
+      "Комедія",
+      "Жахи",
+      "Фантастика",
+      "Телефільм"
+    ],
+    "watched": "2026-10-02",
+    "note": "Фін повинен повернутися в минуле і воз'єднатися зі своєю командою борців з акулами, щоб зупинити перший акулячий торнадо і врятувати людство.",
+    "poster": "https://image.tmdb.org/t/p/w220_and_h330_face/fNMIepqPpg4QN3D0O0SPgvt29w3.jpg",
+    "orderedBy": "iyhallo",
+    "tmdbId": 523849
   }
 ]
