@@ -1493,5 +1493,19 @@
     "poster": "https://image.tmdb.org/t/p/w220_and_h330_face/iTtn4nqpVk6IkPpaUZmwnon4AYn.jpg",
     "orderedBy": "fedoriv_jr",
     "tmdbId": 44214
+  },
+  {
+    "title": "Залягти на дно в Брюге",
+    "year": 2008,
+    "genre": [
+      "Комедія",
+      "Драма",
+      "Кримінал"
+    ],
+    "watched": "2026-10-26",
+    "note": "Два кілери, Рей і Кен, вирушають у відпустку після складної роботи в Лондоні. Їх бос Гарі знаходить для них спокійне на перший погляд містечко в Бельгії — у місті Брюге, де виявляється набагато гарячіше у плані небезпек, ніж у пожвавленому Лондоні.",
+    "poster": "https://image.tmdb.org/t/p/w220_and_h330_face/2fgtXvJu3k6YGqInZuneKRlMxmG.jpg",
+    "orderedBy": "fedoriv_jr",
+    "tmdbId": 8321
   }
 ]
