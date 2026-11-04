@@ -690,5 +690,27 @@
     "submittedBy": "yellowhearth1",
     "tmdbId": 92621,
     "mediaType": "tv"
+  },
+  {
+    "title": "The Liberator",
+    "year": 2013,
+    "poster": "https://www.themoviedb.org/movie/132342-libertador#",
+    "wantedBy": "tidesun_",
+    "submittedBy": "tidesun_"
+  },
+  {
+    "title": "Неймовірні пригоди ДжоДжо",
+    "year": 2012,
+    "poster": "https://image.tmdb.org/t/p/w220_and_h330_face/1YbIVnLMTwv0pBJR7ifoqHhhSQf.jpg",
+    "genre": [
+      "Мультфільм",
+      "Екшн і Пригоди",
+      "Науково фантастичний"
+    ],
+    "note": "Крізь покоління спадкоємці родини Джостар з однаковим прізвиськом протистоять лиходіям з надприродними силами.",
+    "wantedBy": "dyb_antoha1008",
+    "submittedBy": "dyb_antoha1008",
+    "tmdbId": 45790,
+    "mediaType": "tv"
   }
 ]
